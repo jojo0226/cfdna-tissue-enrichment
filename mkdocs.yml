@@ -1,0 +1,15 @@
+site_name: cfdna-tissue-enrichment
+site_description: Standardised tissue / cell-type enrichment of plasma cfDNA coverage
+theme:
+  name: material
+  palette: {primary: blue grey}
+  features: [navigation.sections, content.code.copy]
+markdown_extensions: [tables, admonition, toc]
+nav:
+  - Home: index.md
+  - Install and quick start: quickstart.md
+  - Method: method.md
+  - Panels and layers: panels.md
+  - Outputs and interpretation: outputs.md
+  - Add a new atlas: add_atlas.md
+  - Changelog: changelog.md

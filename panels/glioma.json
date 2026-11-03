@@ -1,0 +1,78 @@
+{
+ "name": "glioma",
+ "description": "Glioma projects: tumor panel with glioma and CNS tracks pre-registered",
+ "layers": [
+  "C",
+  "T"
+ ],
+ "groups": {
+  "Tgroup_glioma": {
+   "layer": "T",
+   "members": [
+    "GBM",
+    "LGG"
+   ]
+  },
+  "Tgroup_kidney": {
+   "layer": "T",
+   "members": [
+    "KIRC",
+    "KIRP"
+   ]
+  },
+  "Tgroup_lung": {
+   "layer": "T",
+   "members": [
+    "LUAD",
+    "LUSC"
+   ]
+  },
+  "Tgroup_gastrointestinal": {
+   "layer": "T",
+   "members": [
+    "COAD",
+    "STAD",
+    "ESCA"
+   ]
+  },
+  "Tgroup_squamous": {
+   "layer": "T",
+   "members": [
+    "HNSC",
+    "LUSC",
+    "ESCA",
+    "CESC"
+   ]
+  }
+ },
+ "axes": {
+  "glioma_vs_blood": {
+   "plus_layer": "T",
+   "plus": [
+    "GBM",
+    "LGG"
+   ],
+   "minus_layer": "C",
+   "minus": [
+    "neutrophil",
+    "CD14-positive monocyte",
+    "B cell",
+    "natural killer cell",
+    "CD4-positive, alpha-beta T cell",
+    "CD8-positive, alpha-beta T cell"
+   ],
+   "note": "exploratory cross-layer contrast (ATAC vs DNase)"
+  }
+ },
+ "primary": [
+  "Tgroup_glioma",
+  "T_GBM",
+  "T_LGG",
+  "C_brain",
+  "C_frontal cortex",
+  "C_spinal cord",
+  "C_neutrophil",
+  "C_CD14-positive monocyte",
+  "glioma_vs_blood"
+ ]
+}

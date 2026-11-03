@@ -1,0 +1,107 @@
+{
+ "name": "prenatal",
+ "description": "Pregnancy: maternal-fetal interface snATAC (W) + ENCODE tissues (C)",
+ "layers": [
+  "C",
+  "W"
+ ],
+ "groups": {
+  "Wgroup_trophoblast_SCT_VCT": {
+   "layer": "W",
+   "members": [
+    "SCT",
+    "SCT_A",
+    "SCT_B",
+    "proSCT",
+    "VCT",
+    "cycling_VCT",
+    "avVCT"
+   ]
+  },
+  "Wgroup_EVT": {
+   "layer": "W",
+   "members": [
+    "EVT",
+    "iEVT",
+    "proEVT",
+    "eEVT",
+    "pEVT"
+   ]
+  },
+  "Wgroup_decidual_stroma": {
+   "layer": "W",
+   "members": [
+    "DSC_A",
+    "DSC_B",
+    "uDSC",
+    "eS"
+   ]
+  },
+  "Wgroup_maternal_immune": {
+   "layer": "W",
+   "members": [
+    "dNK",
+    "T",
+    "B",
+    "CD14_M",
+    "CD16_M"
+   ]
+  },
+  "Wgroup_maternal_endothelial": {
+   "layer": "W",
+   "members": [
+    "vEC",
+    "LEC",
+    "aEC"
+   ]
+  },
+  "Wgroup_fetal_endothelial_stroma": {
+   "layer": "W",
+   "members": [
+    "fEC",
+    "FB",
+    "HB"
+   ]
+  }
+ },
+ "axes": {
+  "origin_fetal_specific": {
+   "layer": "W",
+   "plus": [
+    "GC",
+    "EVT",
+    "proEVT",
+    "SCT",
+    "SCT_A",
+    "SCT_B",
+    "proSCT",
+    "VCT",
+    "cycling_VCT",
+    "avVCT",
+    "iEVT"
+   ],
+   "minus": [
+    "CD16_M",
+    "DSC_A",
+    "DSC_B",
+    "LEC",
+    "Epi",
+    "eS",
+    "uDSC"
+   ],
+   "mirror": "origin_maternal_specific",
+   "note": "clean-origin cell types only (purity >= 0.90, >= 500 nuclei)"
+  }
+ },
+ "primary": [
+  "Wgroup_trophoblast_SCT_VCT",
+  "Wgroup_EVT",
+  "Wgroup_decidual_stroma",
+  "Wgroup_maternal_immune",
+  "origin_fetal_specific",
+  "origin_maternal_specific",
+  "C_placenta",
+  "C_trophoblast cell",
+  "C_neutrophil"
+ ]
+}

@@ -1,0 +1,34 @@
+# Outputs and interpretation
+
+## Files (in `--out`)
+
+| file | content |
+|---|---|
+| `qc.csv`, `qc.png` | fragments read / used / in grid, median length, short fraction (100–150 bp), zero bins, low-depth flag |
+| `design_matrix.csv` | the model: intercept, factor indicators, covariates |
+| `sets/scores_corrected.csv` | samples × tracks: set score minus matched random sets (**use this**); `scores_z.csv` = / random SD; `scores_raw.csv` = before correction |
+| `sets/region_sets_used.csv` | bins per set and GC / mappability of each set vs its random sets |
+| `sample/scores_E.csv` | samples × tracks: E vs the reference group |
+| `sets/`, `sample/` `effect_tests.csv` | per track × effect: beta, t, `p_ols`, `p_perm`, `q_perm`, `q_perm_primary` |
+| `sets/`, `sample/` `pairwise_vs_reference.csv` | each group vs the reference group: n, difference, AUC, `p_mannwhitney`, `p_perm`, q values |
+| `*/scores_heatmap.png`, `*/primary_by_group.png` | per-sample heatmap; primary tracks by group |
+| `differential/enrichment_all_bins.csv` (+ `.png`) | per effect × track: Spearman rho, `p_perm`, `q_perm`, `q_perm_primary` |
+| `differential/enrichment_top_bins.csv` | per effect × direction × track: mean specificity of top bins, `p_perm`, q values; `z_vs_matched_random` with GC / mappability balance (descriptive) |
+| `differential/bin_effects.csv.gz` | per effect × bin: moderated t and p |
+| `run_manifest.json` | version, panel definition, layer provenance, design, every parameter |
+
+## Reading the results
+
+- **Scores are relative.** They compare coverage at a track's specific bins with other bins in the same samples. Compare groups; do not read a value as a fraction of cfDNA.
+- **Check the direction with a known contrast first.** Whether more DNA from a cell type raises or lowers coverage at its specific bins depends on assay and depth. Examples: pregnant vs non-pregnant (placental tracks), high vs low tumour fraction (tumour tracks), early vs late gestation.
+- **Agreement across modes is the strongest evidence.** `sets` and `sample` are per-sample; `differential` is group level. A track moving the same way in all three is more convincing than one significant in a single mode.
+- **Small groups.** With < 8 per group, report effect sizes and AUC rather than p-values alone. Differential mode needs residual df ≥ 8; the log warns when lower.
+- **Covariates.** Adjust for what moves the tissue mix: gestational age in pregnancy; age, sex and batch in most cohorts.
+
+## Limits
+
+- hg38 only so far (a T2T build is planned).
+- The C and T layers come from an hg19 atlas moved to hg38 by bin midpoint (10 kb); W was placed on hg38 natively.
+- W windows are not peaks; at 50 kb their signal is diluted, which is why everything is based on specificity.
+- Seven W cell types have mixed fetal / maternal origin (dNK, T, B, FB, pvSMC, cDC, Ery); they are kept as tracks but excluded from the origin axis.
+- Differential mode's moderated t uses a fixed prior (4 df, median variance), a simple stand-in for limma.

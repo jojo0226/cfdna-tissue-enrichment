@@ -1,0 +1,50 @@
+{
+ "name": "tumor",
+ "description": "Cancer: TCGA tumour ATAC (T) + ENCODE tissues (C); set --primary for your tumour type",
+ "layers": [
+  "C",
+  "T"
+ ],
+ "groups": {
+  "Tgroup_glioma": {
+   "layer": "T",
+   "members": [
+    "GBM",
+    "LGG"
+   ]
+  },
+  "Tgroup_kidney": {
+   "layer": "T",
+   "members": [
+    "KIRC",
+    "KIRP"
+   ]
+  },
+  "Tgroup_lung": {
+   "layer": "T",
+   "members": [
+    "LUAD",
+    "LUSC"
+   ]
+  },
+  "Tgroup_gastrointestinal": {
+   "layer": "T",
+   "members": [
+    "COAD",
+    "STAD",
+    "ESCA"
+   ]
+  },
+  "Tgroup_squamous": {
+   "layer": "T",
+   "members": [
+    "HNSC",
+    "LUSC",
+    "ESCA",
+    "CESC"
+   ]
+  }
+ },
+ "axes": {},
+ "primary": []
+}

@@ -1,0 +1,9 @@
+sample_id,frag_path,birth,sga,gestational_age_weeks
+example_1,frag/example_1.bed.gz,term,nonSGA,22.4
+example_2,frag/example_2.bed.gz,term,nonSGA,25.1
+example_3,frag/example_3.bed.gz,term,SGA,23.0
+example_4,frag/example_4.bed.gz,term,SGA,27.3
+example_5,frag/example_5.bed.gz,preterm,nonSGA,24.2
+example_6,frag/example_6.bed.gz,preterm,nonSGA,21.8
+example_7,frag/example_7.bed.gz,preterm,SGA,26.5
+example_8,frag/example_8.bed.gz,preterm,SGA,23.9

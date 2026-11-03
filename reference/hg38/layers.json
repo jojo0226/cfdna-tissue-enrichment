@@ -1,0 +1,77 @@
+{
+ "build": "hg38",
+ "bins": {
+  "50kb": {
+   "bins": 45595,
+   "C_tracks": 73,
+   "T_tracks": 23,
+   "W_tracks": 32,
+   "W_windows_placed": 0.8031,
+   "W_bins_covered": 0.9997
+  },
+  "10kb": {
+   "bins": 241026,
+   "C_tracks": 73,
+   "T_tracks": 23,
+   "W_tracks": 32,
+   "W_windows_placed": 0.8497,
+   "W_bins_covered": 1.0
+  }
+ },
+ "grid": "hg38 autosomes; ENCODE blacklist ENCFF356LFX, gaps, N>10%, 45-mer mappability<0.80 removed",
+ "layers": {
+  "C": {
+   "name": "ENCODE DNase tissues and cell types",
+   "assay": "DNase-seq (bulk)",
+   "n_tracks": 73,
+   "source": "ENCODE portal DNase-seq narrowPeak, 72 biosamples (tissues, blood cells, endothelium, trophoblast) + one neutrophil track; cfdna-chromatin-xai ff_openness atlas",
+   "values": "combined-openness z per track",
+   "provenance": "hg19 build lifted to hg38 by bin midpoint (10 kb); 50 kb hg38 provenance not documented",
+   "citation": "ENCODE Project Consortium, Nature 2020"
+  },
+  "T": {
+   "name": "TCGA tumour ATAC",
+   "assay": "ATAC-seq (bulk tumour)",
+   "n_tracks": 23,
+   "source": "TCGA-ATAC cancer-type-specific peak calls (Corces et al., Science 2018), 23 cancer types; same atlas file as C",
+   "values": "openness z per track",
+   "provenance": "as C",
+   "citation": "Corces et al., Science 362:eaav1898 (2018)"
+  },
+  "W": {
+   "name": "Maternal-fetal interface snATAC",
+   "assay": "snATAC-seq (pseudobulk)",
+   "n_tracks": 32,
+   "source": "Wang et al. 2026, 32 cell types (erythroid dropped); 5 kb pseudobulk window counts prepared by Paz Polak",
+   "values": "CPM -> log1p -> z per cell type",
+   "provenance": "windows placed on hg38 natively from their hg38 window numbers",
+   "hg38_offset_agreement": {
+    "chr1": 0.992,
+    "chr2": 0.997,
+    "chr3": 1.0,
+    "chr4": 1.0,
+    "chr5": 1.0,
+    "chr6": 0.997,
+    "chr7": 1.0,
+    "chr8": 0.995,
+    "chr9": 0.975,
+    "chr10": 0.995,
+    "chr11": 0.997,
+    "chr12": 1.0,
+    "chr13": 1.0,
+    "chr14": 1.0,
+    "chr15": 0.99,
+    "chr16": 0.997,
+    "chr17": 0.993,
+    "chr18": 1.0,
+    "chr19": 1.0,
+    "chr20": 1.0,
+    "chr21": 0.983,
+    "chr22": 1.0,
+    "chrX": 0.995
+   },
+   "track_meta": "tracks_W.csv",
+   "citation": "Wang et al., Nature 653:167-179 (2026), doi:10.1038/s41586-026-10316-x"
+  }
+ }
+}

@@ -1,0 +1,135 @@
+{
+ "name": "pan",
+ "description": "All layers (C, T, W), no pre-registered tracks; for exploration",
+ "layers": [
+  "C",
+  "T",
+  "W"
+ ],
+ "groups": {
+  "Wgroup_trophoblast_SCT_VCT": {
+   "layer": "W",
+   "members": [
+    "SCT",
+    "SCT_A",
+    "SCT_B",
+    "proSCT",
+    "VCT",
+    "cycling_VCT",
+    "avVCT"
+   ]
+  },
+  "Wgroup_EVT": {
+   "layer": "W",
+   "members": [
+    "EVT",
+    "iEVT",
+    "proEVT",
+    "eEVT",
+    "pEVT"
+   ]
+  },
+  "Wgroup_decidual_stroma": {
+   "layer": "W",
+   "members": [
+    "DSC_A",
+    "DSC_B",
+    "uDSC",
+    "eS"
+   ]
+  },
+  "Wgroup_maternal_immune": {
+   "layer": "W",
+   "members": [
+    "dNK",
+    "T",
+    "B",
+    "CD14_M",
+    "CD16_M"
+   ]
+  },
+  "Wgroup_maternal_endothelial": {
+   "layer": "W",
+   "members": [
+    "vEC",
+    "LEC",
+    "aEC"
+   ]
+  },
+  "Wgroup_fetal_endothelial_stroma": {
+   "layer": "W",
+   "members": [
+    "fEC",
+    "FB",
+    "HB"
+   ]
+  },
+  "Tgroup_glioma": {
+   "layer": "T",
+   "members": [
+    "GBM",
+    "LGG"
+   ]
+  },
+  "Tgroup_kidney": {
+   "layer": "T",
+   "members": [
+    "KIRC",
+    "KIRP"
+   ]
+  },
+  "Tgroup_lung": {
+   "layer": "T",
+   "members": [
+    "LUAD",
+    "LUSC"
+   ]
+  },
+  "Tgroup_gastrointestinal": {
+   "layer": "T",
+   "members": [
+    "COAD",
+    "STAD",
+    "ESCA"
+   ]
+  },
+  "Tgroup_squamous": {
+   "layer": "T",
+   "members": [
+    "HNSC",
+    "LUSC",
+    "ESCA",
+    "CESC"
+   ]
+  }
+ },
+ "axes": {
+  "origin_fetal_specific": {
+   "layer": "W",
+   "plus": [
+    "GC",
+    "EVT",
+    "proEVT",
+    "SCT",
+    "SCT_A",
+    "SCT_B",
+    "proSCT",
+    "VCT",
+    "cycling_VCT",
+    "avVCT",
+    "iEVT"
+   ],
+   "minus": [
+    "CD16_M",
+    "DSC_A",
+    "DSC_B",
+    "LEC",
+    "Epi",
+    "eS",
+    "uDSC"
+   ],
+   "mirror": "origin_maternal_specific"
+  }
+ },
+ "primary": []
+}
