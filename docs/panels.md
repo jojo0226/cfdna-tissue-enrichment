@@ -2,7 +2,7 @@
 
 ## Layers
 
-hg38: C, T, W. hg19: C, T (the atlas's original build; W is not built for hg19). Choose with .
+hg38: C, T, W. hg19: C, T (the atlas's original build; W is not built for hg19). Choose with `--build hg19`.
 
 ### hg38
 
