@@ -161,7 +161,7 @@ def main(argv=None):
             p.add_argument("--factor", action="append", default=[], help="COLUMN:REFERENCE:CASE, repeatable")
             p.add_argument("--group", help="shortcut for one factor (with --case, --reference-level)"); p.add_argument("--case"); p.add_argument("--reference-level")
             p.add_argument("--interaction", action="store_true"); p.add_argument("--covariates", default="", help="comma-separated; :num / :cat to force type")
-            p.add_argument("--primary", default=None, help="comma-separated primary tracks (overrides the panel's list)")
+            p.add_argument("--primary", default=None, help="primary tracks, comma-separated (use ';' if a track name contains a comma); overrides the panel's list")
             p.add_argument("--min-fragments", type=float, default=5e6); p.add_argument("--set-size", type=int, default=None, help="bins per set (default 1000 at 50kb, 5000 at 10kb)")
             p.add_argument("--n-random", type=int, default=200); p.add_argument("--n-perm", type=int, default=2000); p.add_argument("--n-perm-bins", type=int, default=200)
             p.add_argument("--top-n", type=int, default=2000); p.add_argument("--seed", type=int, default=17)

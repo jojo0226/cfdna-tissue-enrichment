@@ -95,5 +95,6 @@ def region_sets(SP, top_n):
 
 def primary_tracks(panel, override=None):
     if override:
-        return [t.strip() for t in override.split(",") if t.strip()]
+        sep = ";" if ";" in override else ","                            # use ';' when track names contain commas
+        return [t.strip() for t in override.split(sep) if t.strip()]
     return list(panel.get("primary", []))

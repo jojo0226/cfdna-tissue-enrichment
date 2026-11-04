@@ -1,6 +1,6 @@
 # Benchmarks (v0.1.0, 2026-11-03)
 
-Two benchmarks with known answers, both run with the `tumor` panel (layers C + T). Scripts are in `benchmarks/`;
+Benchmarks with known or expected answers, run with the `tumor` or `glioma` panel (layers C + T). Scripts are in `benchmarks/`;
 result tables in `benchmarks/results/`.
 
 ## 1. PRAD in-silico mixtures (hg19): does the method find tumour DNA, and how little?
@@ -26,6 +26,16 @@ beyond every unspiked sample (HD45 and HD46) at that depth. All files hg19 (nati
 - Caveat: the null has only two healthy people. The earlier benchmark with four people showed that person-to-person
   variation, not depth, sets the floor, so real-world limits will be higher than 2%.
 
+
+**Differential mode on the mixtures** (spiked ≥ 5% vs unspiked, 9 vs 6 samples per depth):
+
+| Depth | All-bins rho for T_PRAD (rank among 23 TCGA tracks) | p | Top-2,000 "down" bins: T_PRAD specificity rank | p |
+|---|---|---|---|---|
+| 10 M | −0.044 (most negative, 1st) | 0.005 | 1st of 23 | 0.015 |
+| 30 M | −0.076 (1st) | < 0.005 | 1st of 23 | < 0.005 |
+
+Differential mode recovers the tumour type too: bins that lose coverage with tumour DNA are the most PRAD-specific.
+
 ## 2. Cabat pan-cancer cohort (hg38): does each cancer light up its own track?
 
 **Design.** 139 cases (pancreatic 28, lung 23, breast 22, prostate 21, colorectal 18, ovary 12, liver 8, stomach 7)
@@ -49,14 +59,43 @@ below ~3%.
 - **No diagonal.** Most cancer types share the same pattern of TCGA tracks (see the matrix rows), so the main
   case-vs-control difference in this cohort is common to all cancers, not tumour-type specific. At ichorCNA
   fractions of ~1–3%, tumour-specific DNA is near the detection limit found in benchmark 1.
-- **Breast** is the one clear own-track hit (rank 1 of 23 in sample and differential modes).
+- **Direction matters.** Benchmark 1 shows tumour DNA *lowers* the own-track score. Own-track changes in that
+  direction: **liver** (T_LIHC, sample t −2.49, p 0.017; differential p 0.01) and **ovary** (C_ovary, negative in all
+  three modes, p < 0.001). **Breast** (T_BRCA) and **stomach** (T_STAD) are significant in the *opposite* direction,
+  so they are not tumour-derived signal; they follow the shared case/control shift.
 - **Within cases, the own-track score falls as ichorCNA tumour fraction rises** in 6 of 8 cancer types, the same
   direction as the mixture benchmark (stomach and lung LUAD individually significant). This is the expected
   tumour signal, but weak at these fractions.
 - The shared pattern needs follow-up before biological interpretation: cases and controls may differ in collection
   era or processing, which no covariate here captures.
 
-## 3. Null calibration (Cabat controls, random labels)
+
+### Immune and blood tracks (ENCODE layer) in Cabat
+
+| Track | Cases vs controls | Strongest (permutation p < 0.05) |
+|---|---|---|
+| B, NK, CD4 T, CD8 T, myeloid progenitor, spleen, thymus | lower in nearly every cancer type | pancreatic (sets: all), prostate (sample and differential: all), colorectal, lung |
+| Neutrophil | lower | prostate, pancreatic, colorectal (sample) |
+| Monocyte | slightly higher | stomach (sample t = 2.24) |
+
+With the mixture-benchmark direction (more DNA from a cell type lowers coverage at its specific bins), cancer
+plasma in this cohort carries relatively more blood-cell-derived cfDNA, especially lymphoid and progenitor, than
+controls. This matches the shared, non-tumour-specific case/control shift seen on the TCGA tracks. Collection or
+processing differences between cases and controls could produce the same pattern. Table:
+`benchmarks/results/cabat_immune_tracks.csv`.
+
+## 3. GBM cohorts (hg38, one library batch each)
+
+| Comparison | Panel | n | Result |
+|---|---|---|---|
+| GBM (IDH-wt) vs schwannoma | glioma | 20 vs 16 | No glioma or CNS track significant in any mode (T_GBM sets t −0.76, p 0.47). Neutrophil lower in GBM (differential rho −0.087, p 0.04; q 0.36). |
+| Metastatic breast vs schwannoma | tumor | 10 vs 16 | T_BRCA lower in the expected (tumour) direction in all modes, strongest in sample mode (t −1.80, p 0.08, rank 4/23); not significant at this n. Monocyte-specific bins over-represented among bins losing coverage (top-bin p 0.035). |
+| Progression vs pseudo-progression | glioma | 5 vs 5 | Nothing significant (all q ≥ 0.84). |
+
+GBM releases little tumour DNA into plasma, so the absence of a glioma signal is expected at these sizes;
+the method does not invent one. The metastatic breast comparison points the right way but needs more samples.
+
+## 4. Null calibration (Cabat controls, random labels)
 
 | Mode | Runs | Mean share of tracks at p < 0.05 | Max in one run |
 |---|---|---|---|
@@ -70,7 +109,8 @@ Differential mode is conservative.
 
 ## Take-aways
 
-1. The method recovers tumour-type-specific signal when tumour DNA is ≥ 2–5% (`sample` mode most sensitive).
-2. Tumour tracks go **down** with more tumour DNA.
+1. The method recovers tumour-type-specific signal when tumour DNA is ≥ 2–5%, in all three modes (`sample` most
+   sensitive per sample; `differential` finds it at the group level).
+2. Tumour tracks go **down** with more tumour DNA; a significant change in the other direction is not tumour signal.
 3. In low-fraction real cohorts, expect shared, non-specific case/control shifts; pre-register tracks and check
    dose-response with an independent tumour-fraction estimate (ichorCNA) before interpreting.
