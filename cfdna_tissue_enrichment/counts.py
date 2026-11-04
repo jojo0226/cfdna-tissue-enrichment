@@ -12,18 +12,27 @@ DETREND = {"50kb": 41, "10kb": 205}                                      # ~2 Mb
 def count_fragments(path, lut, bs, nbins, min_mapq=30, lmin=50, lmax=500, mapq_col=None, chunk=4_000_000):
     counts = np.zeros(nbins, np.int64); hist = np.zeros(lmax + 1, np.int64); n_all = n_pass = 0
     opener = gzip.open if path.endswith(".gz") else open
+    header = None
     with opener(path, "rt") as fh:
         first = fh.readline()
         while first.startswith("#") or first.lower().startswith(("chrom", "track", "browser")):
+            if first.lower().lstrip("#").startswith("chrom"): header = [h.strip().lower() for h in first.lstrip("#").rstrip("\n").split("\t")]
             first = fh.readline()
-    has_q = False; qc_ = 3 if mapq_col is None else mapq_col - 1
-    if mapq_col is not None:
-        has_q = mapq_col > 0
-    elif len(first.split("\t")) >= 4:
+    f = first.rstrip("\n").split("\t"); has_q = False; qc_ = None
+
+    def _num(x):
         try:
-            v = float(first.split("\t")[3]); has_q = 0 <= v <= 255
+            v = float(x); return 0 <= v <= 255
         except ValueError:
-            has_q = False
+            return False
+    if mapq_col is not None:                                             # explicit (1-based; 0 = none)
+        has_q = mapq_col > 0; qc_ = mapq_col - 1
+    elif header and "mapq" in header:                                    # e.g. FinaleDB: chrom start end name mapq strand
+        qc_ = header.index("mapq"); has_q = True
+    elif len(f) >= 4 and _num(f[3]):
+        qc_, has_q = 3, True
+    elif len(f) >= 5 and f[3] in (".", "") and _num(f[4]):               # BED6 with MAPQ in the score column
+        qc_, has_q = 4, True
     use = [0, 1, 2] + ([qc_] if has_q else [])
     for df in pd.read_csv(path, sep="\t", header=None, usecols=use, comment="#", chunksize=chunk, dtype={0: str}, low_memory=False, on_bad_lines="skip"):
         df = df[pd.to_numeric(df[1], errors="coerce").notna() & pd.to_numeric(df[2], errors="coerce").notna()]

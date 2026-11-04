@@ -1,6 +1,10 @@
 # Panels and layers
 
-## Layers (hg38)
+## Layers
+
+hg38: C, T, W. hg19: C, T (the atlas's original build; W is not built for hg19). Choose with .
+
+### hg38
 
 | ID | Layer | Assay | Tracks | Source | Notes |
 |---|---|---|---|---|---|

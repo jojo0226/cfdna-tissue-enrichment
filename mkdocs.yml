@@ -11,5 +11,6 @@ nav:
   - Method: method.md
   - Panels and layers: panels.md
   - Outputs and interpretation: outputs.md
+  - Benchmarks: benchmarks.md
   - Add a new atlas: add_atlas.md
   - Changelog: changelog.md

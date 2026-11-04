@@ -1,0 +1,54 @@
+{
+ "build": "hg19",
+ "bins": {
+  "50kb": {
+   "grid": {
+    "total": 57633,
+    "N_gt_10pct": 4138,
+    "map_lt_080": 12705,
+    "blacklist": 5409,
+    "gap": 4177,
+    "kept": 44171
+   },
+   "bins": 44171,
+   "C_tracks": 73,
+   "T_tracks": 23,
+   "C_bins_covered": 1.0
+  },
+  "10kb": {
+   "grid": {
+    "total": 288113,
+    "N_gt_10pct": 19831,
+    "map_lt_080": 72486,
+    "blacklist": 24008,
+    "gap": 19880,
+    "kept": 214619
+   },
+   "bins": 214619,
+   "C_tracks": 73,
+   "T_tracks": 23,
+   "C_bins_covered": 1.0
+  }
+ },
+ "grid": "hg19 autosomes; ENCODE blacklist v2 (hg19), UCSC gaps, N>10%, CRG 50-mer mappability<0.80 removed",
+ "layers": {
+  "C": {
+   "name": "ENCODE DNase tissues and cell types",
+   "assay": "DNase-seq (bulk)",
+   "n_tracks": 73,
+   "source": "ENCODE portal DNase-seq narrowPeak (hg19), 72 biosamples + one neutrophil track; cfdna-chromatin-xai ff_openness atlas",
+   "values": "combined-openness z per track",
+   "provenance": "native hg19 (the atlas's original build)",
+   "citation": "ENCODE Project Consortium, Nature 2020"
+  },
+  "T": {
+   "name": "TCGA tumour ATAC",
+   "assay": "ATAC-seq (bulk tumour)",
+   "n_tracks": 23,
+   "source": "TCGA-ATAC cancer-type-specific peak calls (Corces et al., Science 2018), 23 cancer types; same atlas file as C",
+   "values": "openness z per track",
+   "provenance": "as C",
+   "citation": "Corces et al., Science 362:eaav1898 (2018)"
+  }
+ }
+}

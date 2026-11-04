@@ -45,6 +45,7 @@ Documentation: `docs/` (published as a GitHub Pages site by `.github/workflows/d
 | [Method](docs/method.md) | the standardised method |
 | [Panels and layers](docs/panels.md) | what each atlas and panel contains |
 | [Outputs and interpretation](docs/outputs.md) | files and how to read them |
+| [Benchmarks](docs/benchmarks.md) | PRAD mixtures, pan-cancer cohort, null calibration |
 | [Add a new atlas](docs/add_atlas.md) | how to plug in another reference |
 
 ## Repository layout
@@ -52,7 +53,9 @@ Documentation: `docs/` (published as a GitHub Pages site by `.github/workflows/d
 ```
 cfdna_tissue_enrichment/   package (cli, reference, counts, stats, modes, figures)
 panels/                    panel definitions (JSON)
-reference/hg38/            grid + layers at 50 kb and 10 kb, layers.json, tracks_W.csv
+reference/hg38/            grid + layers C, T, W at 50 kb and 10 kb, layers.json, tracks_W.csv
+reference/hg19/            grid + layers C, T at 50 kb and 10 kb (native hg19 build of the atlas)
+benchmarks/                benchmark scripts and result tables
 examples/                  8 small fragment files (BH01 subsamples; arbitrary labels) + samples.csv
 tests/smoke_test.sh        runs every panel on the examples
 build/build_layers.py      how the reference layers were built (maintainers)
