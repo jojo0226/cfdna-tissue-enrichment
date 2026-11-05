@@ -67,7 +67,7 @@ def cmd_tracks(a):
 
 def cmd_run(a):
     os.makedirs(a.out, exist_ok=True); modes = [m.strip() for m in a.modes.split(",") if m.strip()]
-    bad = set(modes) - {"sets", "sample", "differential"}
+    bad = set(modes) - {"sample", "differential"}
     if bad: sys.exit(f"unknown modes: {bad}")
     meta = read_samples(a.samples)
     miss = [p for p in meta.frag_path if not os.path.exists(p)]
@@ -81,7 +81,7 @@ def cmd_run(a):
     badc = [c.split(":")[0] for c in covs if c.split(":")[0] not in meta]
     if badc: sys.exit(f"covariates not in samples file: {badc}")
     if not F and ("sample" in modes or "differential" in modes):
-        log("no --factor given: running 'sets' only (sample mode needs a reference group, differential mode needs groups)"); modes = ["sets"]
+        sys.exit("no groups given: both modes need --factor (or --group); sample mode scores each sample against the reference group")
     meta = meta.set_index("sample_id", drop=False)
 
     P = RF.load_panel(a.panel); rdir = RF.ref_dir(a.build, a.reference); bs = RF.BIN[a.bin]
@@ -104,18 +104,6 @@ def cmd_run(a):
         if n_ref < 2: sys.exit(f"reference group '{refcell}' has {n_ref} samples; need >= 2")
         Xd.to_csv(os.path.join(a.out, "design_matrix.csv"))
     info = {}
-
-    if "sets" in modes:
-        od = os.path.join(a.out, "sets"); os.makedirs(od, exist_ok=True); top = a.set_size or RF.TOPN[a.bin]
-        sets = RF.region_sets(SP, top); (Rw, Cw, Zw), sinfo = MD.mode_sets(Xp, samples, sets, g, a.n_random, a.seed)
-        Rw.to_csv(os.path.join(od, "scores_raw.csv")); Cw.to_csv(os.path.join(od, "scores_corrected.csv")); Zw.to_csv(os.path.join(od, "scores_z.csv"))
-        sinfo.assign(primary=sinfo.set.isin(primary)).to_csv(os.path.join(od, "region_sets_used.csv"), index=False)
-        FG.heatmap(os.path.join(od, "scores_heatmap.png"), Zw, lab, primary, "Sets: score z vs matched random bins", "row z")
-        if F:
-            ST.effect_tests(Cw, Xd, terms, primary, a.n_perm, a.seed).to_csv(os.path.join(od, "effect_tests.csv"), index=False)
-            ST.pairwise_tests(Cw.loc[lab.index], lab, refcell, primary, a.n_perm, a.seed).to_csv(os.path.join(od, "pairwise_vs_reference.csv"), index=False)
-            FG.by_group(os.path.join(od, "primary_by_group.png"), Cw.loc[lab.index], lab, refcell, primary, "Sets: corrected scores")
-        info["sets"] = dict(bins_per_set=top); log("sets done")
 
     if "sample" in modes:
         od = os.path.join(a.out, "sample"); os.makedirs(od, exist_ok=True)
@@ -163,12 +151,12 @@ def main(argv=None):
             p.add_argument("--index", type=int, default=None, help="0-based row of the samples file (for Slurm arrays)")
         if name == "run":
             p.add_argument("--out", required=True)
-            p.add_argument("--modes", default="sets,sample,differential")
+            p.add_argument("--modes", default="sample,differential", help="sample, differential or both")
             p.add_argument("--factor", action="append", default=[], help="COLUMN:REFERENCE:CASE, repeatable")
             p.add_argument("--group", help="shortcut for one factor (with --case, --reference-level)"); p.add_argument("--case"); p.add_argument("--reference-level")
             p.add_argument("--interaction", action="store_true"); p.add_argument("--covariates", default="", help="comma-separated; :num / :cat to force type")
             p.add_argument("--primary", default=None, help="primary tracks, comma-separated (use ';' if a track name contains a comma); overrides the panel's list")
-            p.add_argument("--min-fragments", type=float, default=5e6); p.add_argument("--set-size", type=int, default=None, help="bins per set (default 1000 at 50kb, 5000 at 10kb)")
+            p.add_argument("--min-fragments", type=float, default=5e6)
             p.add_argument("--n-random", type=int, default=200); p.add_argument("--n-perm", type=int, default=2000); p.add_argument("--n-perm-bins", type=int, default=200)
             p.add_argument("--top-n", type=int, default=2000); p.add_argument("--seed", type=int, default=17)
             p.add_argument("--bar-top", type=int, default=None, help="ranked bar plots: tracks per panel (default: all)")

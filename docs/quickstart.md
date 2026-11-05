@@ -56,14 +56,13 @@ cfdna-tissue-enrich tracks --panel prenatal    # list a panel's tracks; * = prim
 | option | default | meaning |
 |---|---|---|
 | `--panel` | `pan` | panel name or a panel JSON path |
-| `--modes` | `sets,sample,differential` | any subset; without groups only `sets` runs |
+| `--modes` | `sample,differential` | either or both; both need groups (`--factor` or `--group`) |
 | `--factor` | — | `COLUMN:REFERENCE:CASE`, repeatable |
 | `--group`, `--reference-level`, `--case` | — | shortcut for one factor |
 | `--interaction` | off | factor × factor terms |
 | `--covariates` | — | comma-separated; numeric with ≥ 6 values = linear, else categorical; force with `:num` / `:cat` |
 | `--primary` | panel's list | pre-registered tracks (own BH correction) |
 | `--bin` | `50kb` | `50kb` or `10kb` |
-| `--set-size` | 1000 / 5000 | bins per set in sets mode (50 kb / 10 kb) |
 | `--top-n` | 2000 | differential mode, bins per direction |
 | `--n-perm`, `--n-perm-bins` | 2000, 200 | permutations for score tests / differential mode |
 | `--seed` | 17 | same inputs + seed = identical output |

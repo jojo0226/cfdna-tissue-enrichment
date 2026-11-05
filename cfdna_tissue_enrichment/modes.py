@@ -1,8 +1,6 @@
-"""The three modes. All take the normalised coverage matrix Xp (samples x grid bins) and the track specificity
+"""The two modes. Both take the normalised coverage matrix Xp (samples x grid bins) and the track specificity
 SP (grid bins x tracks) from reference.specificity().
 
-  sets          per sample: mean coverage over each track's top-N specific bins minus GC x mappability matched
-                random bin sets (the 10-kb marker method of cfdna-enrich, with sets defined from the atlas)
   sample        per sample: bin z against a reference group, Spearman with each track's specificity over all bins
   differential  per bin: group effect (moderated t); per track: Spearman of bin t with specificity over all bins,
                 and specificity of the top-N bins up / down; label-permutation nulls (top bins re-selected per
@@ -25,22 +23,6 @@ def matched_random(idx, st, n_random, rng):
         pool = np.where(st == k)[0]; rep = len(pool) < cnt[k]
         parts.append(np.stack([rng.choice(pool, cnt[k], replace=rep) for _ in range(n_random)]))
     return np.concatenate(parts, axis=1)
-
-
-# ------------------------------------------------------------------ sets
-def mode_sets(Xp, samples, sets, g, n_random, seed):
-    st = match_strata(g); rng = np.random.default_rng(seed)
-    R = {s: matched_random(idx, st, n_random, rng) for s, idx in sets.items()}
-    raw, cor, zz = {}, {}, {}
-    for i, sid in enumerate(samples):
-        x = Xp[i]; raw[sid], cor[sid], zz[sid] = {}, {}, {}
-        for s, idx in sets.items():
-            obs = float(np.nanmean(x[idx])); rnd = np.nanmean(x[R[s]], 1)
-            raw[sid][s] = obs; cor[sid][s] = obs - rnd.mean(); zz[sid][s] = (obs - rnd.mean()) / rnd.std(ddof=1)
-    info = pd.DataFrame([dict(set=s, n_bins=len(idx), gc_set=g.gc.to_numpy()[idx].mean(), gc_random=g.gc.to_numpy()[R[s]].mean(),
-                              map_set=g.mappability.to_numpy()[idx].mean() if "mappability" in g else np.nan,
-                              map_random=g.mappability.to_numpy()[R[s]].mean() if "mappability" in g else np.nan) for s, idx in sets.items()])
-    return (pd.DataFrame(d).T for d in (raw, cor, zz)), info
 
 
 # ------------------------------------------------------------------ sample

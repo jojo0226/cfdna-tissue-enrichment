@@ -9,14 +9,14 @@ cfDNA fragment files ──► clean hg38 bins ──► GC-corrected, detrended
                                                    │
           atlas layers (C, T, W, …) ──► track specificity per bin
                                                    │
-                     ┌─────────────────────────────┼──────────────────────────────┐
-                   sets                          sample                    differential
-       per sample, top specific bins   per sample, all bins vs a     per bin group effect, then
-        vs matched random bins          reference group               tissue enrichment of it
+                              ┌────────────────────┴────────────────────┐
+                            sample                                differential
+                  per sample, all bins vs a              per bin group effect, then
+                  reference group                         tissue enrichment of it
 ```
 
 - **Same method for every project.** Only the *panel* changes: which atlas layers and which pre-registered tracks.
-- **Three readouts.** Two per-sample scores (`sets`, `sample`) and one group-level enrichment (`differential`).
+- **Two readouts.** A per-sample score (`sample`) and a group-level enrichment (`differential`). Both use every bin, with no bin selection, and agree closely (track rankings r ≈ 0.91–0.97 across the benchmarks).
 - **Group designs** from a single comparison to factorial (e.g. term/preterm × SGA/non-SGA) with covariates.
 - **Clean by construction.** ENCODE blacklist, gaps, high-N and low-mappability bins are removed before anything is counted.
 

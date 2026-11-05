@@ -28,26 +28,35 @@ Panels can add derived tracks:
     `T_GBM` specificity is "open in GBM more than in the other TCGA cancer types", not "more than in blood".
     Use a cross-layer axis or the `C_` blood tracks alongside it when the question is tumour vs blood.
 
-## 3. The three modes
+## 3. The two modes
 
 | mode | per-sample score | method |
 |---|---|---|
-| `sets` | yes | Each track's top-N specific bins (1,000 at 50 kb, 5,000 at 10 kb). Score = mean normalised coverage over the set minus the mean of 200 random bin sets matched on GC decile × mappability quintile. This is the 10-kb marker method of `cfdna-enrich markers`, with sets defined from the atlas. |
 | `sample` | yes | Each bin is turned into a z-score against the **reference group** (median, 1.4826 × MAD; reference samples left out of their own reference when ≥ 4). E = Spearman correlation of a sample's z over all bins with the track's specificity. Uses all bins, nothing selected. |
 | `differential` | no | Each bin is fitted with the group model (moderated t). Per track: (a) **all bins**: Spearman correlation of bin t with specificity; (b) **top bins**: mean specificity of the 2,000 bins most up and most down. Both are tested against label permutations (bins refitted and top bins re-selected each time). A z against GC × mappability matched random bins is reported for description only. |
 
-Positive values mean the same in every mode: more coverage, in cases (or in that sample), at bins specific to the track.
+Positive values mean the same in both modes: more coverage, in cases (or in that sample), at bins specific to the track.
 
 ## 4. Group design and tests
 
 - `--factor COLUMN:REFERENCE:CASE` defines a two-level factor; repeat for factorial designs. The **reference group**
   is every factor at its reference level.
-- **Effect tests** (sets and sample modes): OLS of each score on the factors + covariates; p from OLS and from
+- **Effect tests** (sample mode): OLS of each score on the factors + covariates; p from OLS and from
   permutations of one factor's labels *within* levels of the other factors (covariates stay with their samples).
 - **Pairwise tests**: every other group vs the reference group (difference, AUC, Mann–Whitney p, permutation p).
 - **Multiple testing**: BH across all tracks (`q_perm`) and separately across the panel's primary tracks (`q_perm_primary`).
 
-## 5. Why permutation p-values for top bins
+## 5. Why there is no `sets` mode
+
+Versions ≤ 0.1.2 had a third mode, `sets`: mean coverage over each track's top-1,000 specific bins minus random bins
+matched on GC and mappability (the original cfdna-chromatin-xai marker method). It was removed in 0.2.0. Across 11
+benchmarks its track rankings agreed only moderately with the other modes (r 0.35–0.63, against 0.91–0.97 between
+`sample` and `differential`), tracks significant in two modes sometimes went in opposite directions with `sets` the
+odd one out, and it was the least sensitive mode in the PRAD mixtures (detection limit 20% at 10 M fragments, against
+2% for `sample`). Top specific bins differ from matched random bins in more than GC and mappability (gene density,
+replication timing), so part of a `sets` score is not cell-type signal.
+
+## 6. Why permutation p-values for top bins
 
 Top differential bins are selected from noisy data, so they are not exchangeable with random bins even when GC and
 mappability are matched. On null data, matched-random p-values flagged 6–14% of tracks at p < 0.05, against ~6% for

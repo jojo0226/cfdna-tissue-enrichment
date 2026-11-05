@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0 (2026-11-05)
+- **`sets` mode removed.** Two modes remain, `sample` (per sample) and `differential` (group level); both use every bin
+  and agree closely. Why: [method, section 5](method.md#5-why-there-is-no-sets-mode). `--set-size` removed; a run
+  without groups now stops with a message instead of falling back to `sets`.
+- Benchmark scripts and write-up updated to the two modes.
+
 ## 0.1.2 (2026-11-05)
 - Ranked bar plots of every track for each effect in all three modes (two panels like the cfdna-chromatin-xai plot, coloured by track type), `--bar-top`, and a `plot` command to redraw them for a finished run.
 - Benchmark runs re-plotted with the new figures.

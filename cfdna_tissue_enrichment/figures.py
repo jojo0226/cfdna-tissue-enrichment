@@ -105,8 +105,7 @@ def ranked_outputs(out, top=None):
     """Draw ranked bar plots for every effect of a finished run folder; returns the files written."""
     import os, re
     done = []
-    specs = [("sets", "effect_tests.csv", "score", "t", "Sets mode: group effect on corrected set scores", "t (case vs reference)"),
-             ("sample", "effect_tests.csv", "score", "t", "Sample mode: group effect on E", "t (case vs reference)"),
+    specs = [("sample", "effect_tests.csv", "score", "t", "Sample mode: group effect on E", "t (case vs reference)"),
              ("differential", "enrichment_all_bins.csv", "track", "rho", "Differential mode, all bins", "Spearman rho (bin t vs specificity)")]
     for mode, f, tcol, val, title, xl in specs:
         fp = os.path.join(out, mode, f)

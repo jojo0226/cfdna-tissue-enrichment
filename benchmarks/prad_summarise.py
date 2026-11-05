@@ -5,9 +5,9 @@ import os, sys
 import numpy as np, pandas as pd
 from scipy.stats import spearmanr
 import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
-O = sys.argv[1]; S = pd.read_csv(os.path.join(O, "samples_mixtures.csv")).set_index("sample_id"); rows = []; fig, axs = plt.subplots(2, 2, figsize=(11, 8), facecolor="white")
+O = sys.argv[1]; S = pd.read_csv(os.path.join(O, "samples_mixtures.csv")).set_index("sample_id"); rows = []; fig, axs = plt.subplots(2, 1, figsize=(6, 8), facecolor="white", squeeze=False)
 for i, dep in enumerate((10, 30)):
-    for j, (mode, f) in enumerate((("sets", "sets/scores_corrected.csv"), ("sample", "sample/scores_E.csv"))):
+    for j, (mode, f) in enumerate((("sample", "sample/scores_E.csv"),)):
         p = os.path.join(O, "runs", f"d{dep}M", f)
         if not os.path.exists(p): continue
         X = pd.read_csv(p, index_col=0); m = S.loc[X.index]; ax = axs[i, j]

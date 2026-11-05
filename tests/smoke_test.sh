@@ -10,4 +10,4 @@ for p in prenatal tumor glioma pan; do
 done
 python -m cfdna_tissue_enrichment run --panel prenatal --samples examples/samples.csv --out $T/prenatal_rerun --mapq-col 0 \
   --factor birth:term:preterm --factor sga:nonSGA:SGA --covariates gestational_age_weeks --n-perm 500 --n-perm-bins 50 > /dev/null 2>&1
-for f in sets/scores_corrected.csv sample/scores_E.csv differential/enrichment_all_bins.csv; do cmp $T/prenatal/$f $T/prenatal_rerun/$f && echo "reproducible $f"; done
+for f in sample/scores_E.csv differential/enrichment_all_bins.csv; do cmp $T/prenatal/$f $T/prenatal_rerun/$f && echo "reproducible $f"; done

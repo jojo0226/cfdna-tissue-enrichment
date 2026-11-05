@@ -7,7 +7,7 @@ runs = [("gbm/runs/GBM_vs_schwannoma", "diagnosis:GBM_vs_Schwannoma"), ("gbm/run
         ("gbm/runs/progression_vs_pseudo", "group:Progression_vs_Pseudoprogression"), ("prad_mix/runs/diff_d10M", "hi:yes_vs_no"), ("prad_mix/runs/diff_d30M", "hi:yes_vs_no")]
 out = []
 for d, eff in runs:
-    for mode, f, col in (("sets", "sets/effect_tests.csv", "t"), ("sample", "sample/effect_tests.csv", "t"), ("differential", "differential/enrichment_all_bins.csv", "rho"),
+    for mode, f, col in (("sample", "sample/effect_tests.csv", "t"), ("differential", "differential/enrichment_all_bins.csv", "rho"),
                          ("diff_top_down", "differential/enrichment_top_bins.csv", "mean_specificity")):
         p = os.path.join(B, d, f)
         if not os.path.exists(p): continue

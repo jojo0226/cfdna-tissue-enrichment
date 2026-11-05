@@ -1,4 +1,4 @@
-"""Reference loading: genome grid, atlas layers, panels, track specificity and region sets.
+"""Reference loading: genome grid, atlas layers, panels, track specificity.
 
 A *layer* is one per-bin openness matrix from one source and assay (e.g. C = ENCODE DNase, T = TCGA ATAC,
 W = maternal-fetal-interface snATAC). Layers live in reference/<build>/layer_<ID>_<bin>.csv.gz with a `key`
@@ -9,15 +9,13 @@ tracks. Every panel uses the same method; only the reference changes.
 
 Specificity (the one definition used everywhere): within a layer, each bin's openness is standardised across
 that layer's tracks (z), then each track's specificity = its z minus the mean z of the layer's other tracks.
-Groups = mean specificity of member tracks; axes = mean(plus members) - mean(minus members).
-Region sets (sets mode) = the top-N bins of each track's specificity."""
+Groups = mean specificity of member tracks; axes = mean(plus members) - mean(minus members)."""
 import json, os, sys
 import numpy as np, pandas as pd
 
 PKG = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(PKG)
 BIN = {"50kb": 50000, "10kb": 10000}
-TOPN = {"50kb": 1000, "10kb": 5000}
 
 
 def ref_dir(build, root=None):
@@ -82,15 +80,6 @@ def specificity(layers, panel):
             if ax.get("mirror"): cols[ax["mirror"]] = -v
     keys = next(iter(layers.values())).index
     return pd.DataFrame(cols, index=keys)
-
-
-def region_sets(SP, top_n):
-    """Top-N bins (row indices into the grid) of each track's specificity."""
-    out = {}
-    for c in SP.columns:
-        v = SP[c].to_numpy(); ok = np.isfinite(v)
-        o = np.where(ok)[0][np.argsort(-v[ok])][:top_n]; out[c] = o
-    return out
 
 
 def primary_tracks(panel, override=None):

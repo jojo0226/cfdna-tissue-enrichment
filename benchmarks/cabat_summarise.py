@@ -13,13 +13,13 @@ for ct, tg in TARGET.items():
     d = os.path.join(R, ct)
     if not os.path.isdir(d): continue
     cases = S.index[(S.cancer_type == ct)]
-    for mode, f, col in (("sets", "sets/effect_tests.csv", "t"), ("sample", "sample/effect_tests.csv", "t"), ("differential", "differential/enrichment_all_bins.csv", "rho")):
+    for mode, f, col in (("sample", "sample/effect_tests.csv", "t"), ("differential", "differential/enrichment_all_bins.csv", "rho")):
         p = os.path.join(d, f)
         if not os.path.exists(p): continue
         e = pd.read_csv(p); e = e[e.effect == EFF]; key = "score" if "score" in e else "track"; e = e.set_index(key)
         tt = e[e.index.str.startswith("T_")][col]
         mats.setdefault(mode, {})[ct] = tt
-        sc = os.path.join(d, "sets/scores_corrected.csv" if mode == "sets" else "sample/scores_E.csv")
+        sc = os.path.join(d, "sample/scores_E.csv")
         for t_ in tg:
             if t_ not in e.index: continue
             v = e.loc[t_, col]; pool = e[e.index.str.startswith(t_.split("_")[0] + "_")][col]
@@ -32,7 +32,7 @@ for ct, tg in TARGET.items():
             rows.append(r)
 T = pd.DataFrame(rows); T.to_csv(os.path.join(O, "benchmark_summary.csv"), index=False)
 pd.set_option("display.width", 220); print(T.round(4).to_string(index=False))
-# matrix figure: TCGA tracks (columns) x cancer types (rows), effect t (sets, sample) or rho (differential)
+# matrix figure: TCGA tracks (columns) x cancer types (rows), effect t (sample) or rho (differential)
 fig, axs = plt.subplots(1, len(mats), figsize=(7 * len(mats), 4.6), facecolor="white", squeeze=False)
 for ax, (mode, m) in zip(axs[0], mats.items()):
     M = pd.DataFrame(m).T; M = M[sorted(M.columns)]; v = np.nanmax(np.abs(M.to_numpy())) or 1
@@ -45,7 +45,7 @@ for ax, (mode, m) in zip(axs[0], mats.items()):
 fig.tight_layout(); fig.savefig(os.path.join(O, "benchmark_matrix.png"), dpi=150)
 # nulls
 nl = []
-for mode, pat in (("sets", "null/run_*/sets/effect_tests.csv"), ("sample", "null/run_*/sample/effect_tests.csv"), ("differential", "null/diff_*/differential/enrichment_all_bins.csv")):
+for mode, pat in (("sample", "null/run_*/sample/effect_tests.csv"), ("differential", "null/diff_*/differential/enrichment_all_bins.csv")):
     for f in glob.glob(os.path.join(O, pat)):
         e = pd.read_csv(f); nl.append(dict(mode=mode, run=f.split("/")[-3], n_tests=len(e), frac_p_lt_005=(e.p_perm < .05).mean(), min_q=e.q_perm.min()))
 N = pd.DataFrame(nl); N.to_csv(os.path.join(O, "null_calibration.csv"), index=False)
