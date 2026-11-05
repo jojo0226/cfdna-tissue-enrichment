@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2 (2026-11-05)
+- Ranked bar plots of every track for each effect in all three modes (two panels like the cfdna-chromatin-xai plot, coloured by track type), `--bar-top`, and a `plot` command to redraw them for a finished run.
+- Benchmark runs re-plotted with the new figures.
+
 ## 0.1.1 (2026-11-03)
 - hg19 reference (layers C and T; clean grid from the hg19 ENCODE blacklist v2, UCSC gaps, N > 10%, CRG 50-mer mappability < 0.80).
 - `count` command and `--cache`: per-sample counts computed once (parallel) and reused.

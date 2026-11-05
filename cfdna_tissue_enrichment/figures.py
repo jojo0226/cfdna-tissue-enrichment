@@ -54,3 +54,65 @@ def qc(path, Q, hists, lmax):
     axs[1].bar(range(len(Q)), Q.fragments_used / 1e6, color=np.where(Q.flag_low_depth, "#d9622b", "#888")); axs[1].set_xticks(range(len(Q)))
     axs[1].set_xticklabels(Q.index, rotation=90, fontsize=7); axs[1].set_ylabel("fragments used (M)"); axs[1].set_title("depth (orange = below minimum)", fontsize=9)
     fig.tight_layout(); fig.savefig(path, dpi=150); plt.close(fig)
+
+
+# ------------------------------------------------------------------ ranked bars (all tracks, two panels)
+IMMUNE = ("B cell", "monocyte", "T cell", "natural killer", "neutrophil", "myeloid progenitor", "spleen", "thymus", "Peyer's patch", "germinal center")
+KIND_COL = {"immune / blood": "#c0392b", "tissue / other cell": "#7f8c8d", "TCGA tumour": "#2471a3", "maternal-fetal": "#8e44ad", "derived (group / axis)": "#d4a017"}
+
+
+def track_kind(t):
+    if t.startswith("C_"): return "immune / blood" if any(k in t for k in IMMUNE) else "tissue / other cell"
+    if t.startswith("T_"): return "TCGA tumour"
+    if t.startswith("W_"): return "maternal-fetal"
+    return "derived (group / axis)"
+
+
+def track_label(t):
+    return ("TCGA " + t[2:]) if t.startswith("T_") else t[2:] if t[:2] in ("C_", "W_") else t
+
+
+def ranked_bars(path, d, val, p, title, xlabel, case="cases", ref="reference", top=None, q=None):
+    """Two panels like the original cfdna-chromatin-xai plot: tracks lower in `case` (left) and higher (right), ranked by
+    |val|, coloured by track type. * permutation p < 0.05, ** also q < 0.10. top=None shows every track."""
+    d = d[np.isfinite(d[val])]
+    lo = d[d[val] < 0].sort_values(val); hi = d[d[val] > 0].sort_values(val, ascending=False)
+    if top: lo, hi = lo.head(top), hi.head(top)
+    n = max(len(lo), len(hi), 1); xmax = float(np.nanmax(np.abs(d[val]))) * 1.15 if len(d) else 1
+    fig, axs = plt.subplots(1, 2, figsize=(13, .19 * n + 2.0), facecolor="white")
+    for ax, part, head in ((axs[0], lo, f"Lower coverage in {case}"), (axs[1], hi, f"Higher coverage in {case}")):
+        part = part.iloc[::-1]; y = np.arange(len(part)) + (n - len(part))
+        ax.barh(y, part[val].abs(), color=[KIND_COL[track_kind(t)] for t in part.track], height=.75)
+        star = ["**" if (q is not None and qq < .10 and pp < .05) else "*" if pp < .05 else "" for pp, qq in
+                zip(part[p], part[q] if q is not None else part[p])]
+        ax.set_yticks(y); ax.set_yticklabels([f"{track_label(t)} {s}".strip() for t, s in zip(part.track, star)], fontsize=6.5)
+        ax.set_ylim(-.7, n - .3); ax.set_xlim(0, xmax); ax.set_xlabel(f"|{xlabel}|", fontsize=8); ax.set_title(head, fontsize=10)
+        ax.tick_params(axis="x", labelsize=7)
+    hs = [plt.Rectangle((0, 0), 1, 1, color=c) for k, c in KIND_COL.items() if (d.track.map(track_kind) == k).any()]
+    ks = [k for k in KIND_COL if (d.track.map(track_kind) == k).any()]
+    fig.legend(hs, ks, loc="lower center", ncol=len(ks), fontsize=7.5, frameon=False)
+    fig.suptitle(f"{title}\nreference: {ref}   * permutation p < 0.05" + ("   ** and q < 0.10" if q is not None else ""), fontsize=10)
+    fig.tight_layout(rect=(0, .035, 1, 1)); fig.savefig(path, dpi=150); plt.close(fig)
+
+
+def effect_parts(effect):
+    """'col:case_vs_ref' -> (case, ref); falls back to ('cases', 'reference')."""
+    e = effect.split(":", 1)[-1]
+    return tuple(e.split("_vs_", 1)) if "_vs_" in e and " x " not in e else ("cases", "reference")
+
+
+def ranked_outputs(out, top=None):
+    """Draw ranked bar plots for every effect of a finished run folder; returns the files written."""
+    import os, re
+    done = []
+    specs = [("sets", "effect_tests.csv", "score", "t", "Sets mode: group effect on corrected set scores", "t (case vs reference)"),
+             ("sample", "effect_tests.csv", "score", "t", "Sample mode: group effect on E", "t (case vs reference)"),
+             ("differential", "enrichment_all_bins.csv", "track", "rho", "Differential mode, all bins", "Spearman rho (bin t vs specificity)")]
+    for mode, f, tcol, val, title, xl in specs:
+        fp = os.path.join(out, mode, f)
+        if not os.path.exists(fp): continue
+        T = pd.read_csv(fp).rename(columns={tcol: "track"})
+        for e, d in T.groupby("effect", sort=False):
+            case, ref = effect_parts(e); fn = os.path.join(out, mode, f"ranked_{re.sub(r'[^A-Za-z0-9]+', '_', e).strip('_')}.png")
+            ranked_bars(fn, d, val, "p_perm", f"{title} — {e}", xl, case, ref, top, "q_perm" if "q_perm" in d else None); done.append(fn)
+    return done

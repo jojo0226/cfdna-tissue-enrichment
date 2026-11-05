@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cfdna-tissue-enrichment"
-version = "0.1.1"
+version = "0.1.2"
 description = "Standardised tissue / cell-type enrichment of plasma cfDNA coverage against chromatin-accessibility atlases"
 readme = "README.md"
 requires-python = ">=3.9"

@@ -12,6 +12,7 @@
 | `sets/`, `sample/` `effect_tests.csv` | per track × effect: beta, t, `p_ols`, `p_perm`, `q_perm`, `q_perm_primary` |
 | `sets/`, `sample/` `pairwise_vs_reference.csv` | each group vs the reference group: n, difference, AUC, `p_mannwhitney`, `p_perm`, q values |
 | `*/scores_heatmap.png`, `*/primary_by_group.png` | per-sample heatmap; primary tracks by group |
+| `*/ranked_<effect>.png` | every track ranked, two panels (lower / higher coverage in cases), coloured by type (immune/blood, tissue, TCGA, derived); sets/sample: group-effect t, differential: all-bins rho; * permutation p < 0.05, ** and q < 0.10. Redraw with `cfdna-tissue-enrich plot --out RUN [--top N]` |
 | `differential/enrichment_all_bins.csv` (+ `.png`) | per effect × track: Spearman rho, `p_perm`, `q_perm`, `q_perm_primary` |
 | `differential/enrichment_top_bins.csv` | per effect × direction × track: mean specificity of top bins, `p_perm`, q values; `z_vs_matched_random` with GC / mappability balance (descriptive) |
 | `differential/bin_effects.csv.gz` | per effect × bin: moderated t and p |

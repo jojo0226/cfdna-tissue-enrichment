@@ -4,6 +4,7 @@
   cfdna-tissue-enrich count  --samples S.csv --cache DIR [--index i]   per-sample bin counts (parallelisable; reused by run --cache)
   cfdna-tissue-enrich panels                       list panels and their layers
   cfdna-tissue-enrich tracks --panel NAME          list a panel's tracks (and which are primary)
+  cfdna-tissue-enrich plot   --out RUN [--top N]   (re)draw ranked bar plots of all tracks for a finished run
 """
 import argparse, json, os, sys, time
 import numpy as np, pandas as pd
@@ -46,6 +47,10 @@ def cmd_count(a):
         if not os.path.exists(r.frag_path): sys.exit(f"missing {r.frag_path}")
         cts, hist, n_all, n_pass, has_q, cached = get_counts(r.sample_id, r.frag_path, a, g, lut, bs)
         log(f"{r.sample_id}: {n_pass:,} fragments used of {n_all:,} (MAPQ filter {'on' if has_q else 'off'}){' [cached]' if cached else ''}")
+
+
+def cmd_plot(a):
+    for f in FG.ranked_outputs(a.out, a.top): log("wrote", f)
 
 
 def cmd_panels(a):
@@ -132,6 +137,7 @@ def cmd_run(a):
         if df_ < 8: log(f"note: differential mode has {df_:.0f} residual df; bin-level t are unstable")
         log("differential done")
 
+    if F: FG.ranked_outputs(a.out, a.bar_top)
     json.dump(dict(version=__version__, panel=a.panel, panel_definition=P, layers={k: lmeta["layers"][k] for k in P["layers"]}, build=a.build, bin=a.bin,
                    modes=modes, factors=F, reference_group=refcell, effects=terms, covariates=covs, primary=primary, mode_info=info,
                    args=vars(a), n_samples=len(samples), time=time.strftime("%Y-%m-%d %H:%M:%S")),
@@ -165,9 +171,11 @@ def main(argv=None):
             p.add_argument("--min-fragments", type=float, default=5e6); p.add_argument("--set-size", type=int, default=None, help="bins per set (default 1000 at 50kb, 5000 at 10kb)")
             p.add_argument("--n-random", type=int, default=200); p.add_argument("--n-perm", type=int, default=2000); p.add_argument("--n-perm-bins", type=int, default=200)
             p.add_argument("--top-n", type=int, default=2000); p.add_argument("--seed", type=int, default=17)
+            p.add_argument("--bar-top", type=int, default=None, help="ranked bar plots: tracks per panel (default: all)")
     sub.add_parser("panels")
+    pp = sub.add_parser("plot"); pp.add_argument("--out", required=True, help="finished run folder"); pp.add_argument("--top", type=int, default=None, help="tracks per panel (default: all)")
     a = ap.parse_args(argv)
-    {"run": cmd_run, "panels": cmd_panels, "tracks": cmd_tracks, "count": cmd_count}[a.cmd](a)
+    {"run": cmd_run, "panels": cmd_panels, "tracks": cmd_tracks, "count": cmd_count, "plot": cmd_plot}[a.cmd](a)
 
 
 if __name__ == "__main__":
