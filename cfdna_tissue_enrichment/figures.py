@@ -115,3 +115,26 @@ def ranked_outputs(out, top=None):
             case, ref = effect_parts(e); fn = os.path.join(out, mode, f"ranked_{re.sub(r'[^A-Za-z0-9]+', '_', e).strip('_')}.png")
             ranked_bars(fn, d, val, "p_perm", f"{title} — {e}", xl, case, ref, top, "q_perm" if "q_perm" in d else None); done.append(fn)
     return done
+
+
+def top_bins_activity(path, tp, loo=None, case="cases", ref="reference", top=20, primary=()):
+    """Two panels from enrichment_top_bins.csv: tracks of the top bins with MORE cfDNA coverage in cases ('up') and in
+    the reference ('down'), x = closed-form z (descriptive), small dots = leave-one-out runs when given. cfDNA logic:
+    open / active chromatin loses coverage, so 'more coverage in cases' = cell types more active in the reference."""
+    import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
+    fig, axs = plt.subplots(1, 2, figsize=(15, 0.36 * min(top, tp.track.nunique()) + 2.2))
+    for ax, (direction, g1, g2) in zip(axs, (("up", case, ref), ("down", ref, case))):
+        d = tp[tp.direction == direction].copy()
+        d = d[d.track.isin(primary) | d.z_closed_form.abs().rank(ascending=False).le(top)].sort_values("z_closed_form").tail(top)
+        y = np.arange(len(d))
+        if loo is not None:
+            l = loo[loo.direction == direction]
+            for k, t in enumerate(d.track):
+                v = l.loc[l.track == t, "z_closed_form"]
+                if len(v): ax.plot([v.min(), v.max()], [k, k], color="#bbbbbb", lw=3, zorder=1); ax.scatter(v, [k] * len(v), s=8, color="#777777", zorder=2)
+        ax.scatter(d.z_closed_form, y, s=60, color=[{"T": "#6a3d9a", "C": "#d1453b", "W": "#1a7f2e"}.get(str(t)[0], "#333333") for t in d.track], zorder=3)
+        ax.set_yticks(y); ax.set_yticklabels([track_label(t) for t in d.track], fontsize=9)
+        ax.axvline(0, color="k", lw=1); ax.axvline(1.96, color="grey", ls="--", lw=1)
+        ax.set_title(f"More cfDNA coverage in {g1}\n= cell types more active in {g2}", fontsize=11); ax.set_xlabel("specificity z, closed form (top bins; descriptive)")
+        for sp_ in ("top", "right"): ax.spines[sp_].set_visible(False)
+    fig.tight_layout(); fig.savefig(path, dpi=200); plt.close(fig)

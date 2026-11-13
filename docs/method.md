@@ -37,6 +37,21 @@ Panels can add derived tracks:
 
 Positive values mean the same in both modes: more coverage, in cases (or in that sample), at bins specific to the track.
 
+### Options added in 0.3.0 (defaults reproduce 0.2.0)
+
+| option | effect | when |
+|---|---|---|
+| `--gc-correct no` | skip the GC LOWESS of step 1.3 | to compare with pipelines that do not GC-correct; GC differences between groups then enter the result (immune tracks are GC-rich) |
+| `--detrend-bins N` | detrend window in bins | e.g. 101 (~5 Mb) to match cfdna-chromatin-xai |
+| `--diff-stat pooled` | differential per-bin statistic = difference of the two pooled groups (mean CPM -> log2 -> detrend); within-group variance not used | one two-level factor, no covariates; reproduces cfdna-chromatin-xai. p-values still from label permutations |
+| `--specificity combined` | specificity = openness minus the mean over all panel tracks, layers mixed | cfdna-chromatin-xai definition; T tracks are then compared with ENCODE tissues and blood |
+| `--loo` | leave-one-out re-pool + re-score (pooled statistic) | robustness of the top-bin specificity |
+
+`z_closed_form` (both statistics) = (mean specificity of the top bins - genome mean) / (genome SD / sqrt(n) x finite-population factor),
+the cfdna-chromatin-xai `spec_z`. Top bins are selected from the data, so it is descriptive and anti-conservative (section 6); use
+`p_perm`. Reading direction: in cfDNA, open chromatin loses coverage, so top bins with **more coverage in cases** mark cell types
+**more active in the reference group** (the `top_bins_activity` figure states both).
+
 ## 4. Group design and tests
 
 - `--factor COLUMN:REFERENCE:CASE` defines a two-level factor; repeat for factorial designs. The **reference group**

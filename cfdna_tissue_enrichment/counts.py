@@ -6,7 +6,7 @@ bins of the clean grid; fragments whose midpoint falls in a removed bin (blackli
 import gzip
 import numpy as np, pandas as pd
 
-DETREND = {"50kb": 41, "10kb": 205}                                      # ~2 Mb rolling-median window, in bins
+DETREND = {"50kb": 41, "10kb": 205}                                      # default ~2 Mb rolling-median window, in bins (--detrend-bins)
 
 
 def count_fragments(path, lut, bs, nbins, min_mapq=30, lmin=50, lmax=500, mapq_col=None, chunk=4_000_000):
@@ -50,16 +50,26 @@ def count_fragments(path, lut, bs, nbins, min_mapq=30, lmin=50, lmax=500, mapq_c
     return counts, hist, n_all, n_pass, has_q
 
 
-def preprocess(counts, g, binsz):
-    """log2(CPM + 1) -> LOWESS on GC (frac 0.10, 3 iterations, level kept) -> per-chromosome centred ~2 Mb
-    rolling-median detrend."""
-    from statsmodels.nonparametric.smoothers_lowess import lowess
-    cpm = counts / max(counts.sum(), 1) * 1e6; y = np.log2(cpm + 1); gc = g.gc.to_numpy(float); ok = np.isfinite(gc) & np.isfinite(y)
-    fit = np.full(len(y), np.nan); fit[ok] = lowess(endog=y[ok], exog=gc[ok], frac=0.10, it=3, return_sorted=False)
-    y = y - fit + np.nanmean(y[ok]); out = np.empty_like(y); w = DETREND[binsz]
+def detrend(y, g, w):
+    """Per-chromosome centred rolling-median detrend over w bins (grid rows are in genome order)."""
+    out = np.empty_like(y)
     for _, idx in g.groupby("chrom", sort=False).indices.items():
         out[idx] = y[idx] - pd.Series(y[idx]).rolling(w, center=True, min_periods=1).median().to_numpy()
     return out
+
+
+def preprocess(counts, g, binsz, gc_correct=True, window=None, level=False):
+    """log2(CPM + 1) -> LOWESS on GC (frac 0.10, 3 iterations, level kept; skipped when gc_correct=False) ->
+    per-chromosome centred rolling-median detrend (window bins; default ~2 Mb). level=True also returns the
+    log2 values before the detrend (the pooled differential statistic pools those)."""
+    from statsmodels.nonparametric.smoothers_lowess import lowess
+    cpm = counts / max(counts.sum(), 1) * 1e6; y = np.log2(cpm + 1)
+    if gc_correct:
+        gc = g.gc.to_numpy(float); ok = np.isfinite(gc) & np.isfinite(y)
+        fit = np.full(len(y), np.nan); fit[ok] = lowess(endog=y[ok], exog=gc[ok], frac=0.10, it=3, return_sorted=False)
+        y = y - fit + np.nanmean(y[ok])
+    out = detrend(y, g, window or DETREND[binsz])
+    return (out, y) if level else out
 
 
 def qc_row(sid, counts, hist, n_all, n_pass, has_q, min_fragments):

@@ -66,3 +66,8 @@ cfdna-tissue-enrich tracks --panel prenatal    # list a panel's tracks; * = prim
 | `--top-n` | 2000 | differential mode, bins per direction |
 | `--n-perm`, `--n-perm-bins` | 2000, 200 | permutations for score tests / differential mode |
 | `--seed` | 17 | same inputs + seed = identical output |
+| `--gc-correct` | `yes` | `no` skips the per-sample GC LOWESS (0.3.0) |
+| `--detrend-bins` | 41 / 205 | rolling-median detrend window in bins (0.3.0) |
+| `--diff-stat` | `t` | `pooled` = difference of pooled groups, one two-level factor, no covariates (0.3.0) |
+| `--specificity` | `layer` | `combined` = one table across the panel's layers, as cfdna-chromatin-xai (0.3.0) |
+| `--loo` | off | pooled statistic: leave-one-out re-pool + re-score of the top bins (0.3.0) |

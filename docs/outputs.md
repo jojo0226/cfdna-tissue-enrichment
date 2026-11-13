@@ -12,8 +12,10 @@
 | `*/scores_heatmap.png`, `*/primary_by_group.png` | per-sample heatmap; primary tracks by group |
 | `*/ranked_<effect>.png` | every track ranked, two panels (lower / higher coverage in cases), coloured by type (immune/blood, tissue, TCGA, derived); sample: group-effect t on E, differential: all-bins rho; * permutation p < 0.05, ** and q < 0.10. Redraw with `cfdna-tissue-enrich plot --out RUN [--top N]` |
 | `differential/enrichment_all_bins.csv` (+ `.png`) | per effect × track: Spearman rho, `p_perm`, `q_perm`, `q_perm_primary` |
-| `differential/enrichment_top_bins.csv` | per effect × direction × track: mean specificity of top bins, `p_perm`, q values; `z_vs_matched_random` with GC / mappability balance (descriptive) |
-| `differential/bin_effects.csv.gz` | per effect × bin: moderated t and p |
+| `differential/enrichment_top_bins.csv` | per effect × direction × track: mean specificity of top bins, `p_perm`, q values; `z_vs_matched_random` with GC / mappability balance and `z_closed_form` (both descriptive) |
+| `differential/bin_effects.csv.gz` | per effect × bin: moderated t and p (`--diff-stat pooled`: pooled difference `d`) |
+| `differential/top_bins_activity_<effect>.png` | top-bin tracks by `z_closed_form`, one panel per coverage direction, titled with the cfDNA reading (more coverage = less active) |
+| `differential/enrichment_top_bins_loo.csv` | `--loo`: per dropped sample × direction × track, mean specificity and `z_closed_form` |
 | `run_manifest.json` | version, panel definition, layer provenance, design, every parameter |
 
 ## Reading the results

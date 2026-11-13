@@ -61,9 +61,18 @@ def load_layers(rdir, binsz, layer_ids, keys):
     return out, meta
 
 
-def specificity(layers, panel):
+def specificity(layers, panel, method="layer"):
+    """method 'layer' (default): per layer, as described above. 'combined': the panel's layers in one table of raw
+    openness, specificity = track openness - mean over all panel tracks (the cfdna-chromatin-xai definition; mixes
+    assays, so TCGA tracks are compared with ENCODE tissues and blood too)."""
     cols = {}
-    for L, A in layers.items():
+    if method == "combined":
+        A = pd.concat([A.add_prefix(f"{L}_") for L, A in layers.items()], axis=1)
+        S = A.sub(A.mean(1), axis=0)
+        for c in S.columns: cols[c] = S[c].to_numpy()
+    elif method != "layer":
+        sys.exit(f"unknown specificity method '{method}' (layer, combined)")
+    for L, A in (layers.items() if method == "layer" else []):
         Z = A.sub(A.mean(1), axis=0).div(A.std(1).replace(0, np.nan), axis=0); n = Z.shape[1]
         S = Z - (Z.sum(1).values[:, None] - Z.values) / (n - 1)
         for c in S.columns: cols[f"{L}_{c}"] = S[c].to_numpy()

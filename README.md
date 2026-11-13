@@ -19,6 +19,9 @@ cfDNA fragment files ──► clean hg38 bins ──► GC-corrected, detrended
 - **Two readouts.** A per-sample score (`sample`) and a group-level enrichment (`differential`). Both use every bin, with no bin selection, and agree closely (track rankings r ≈ 0.91–0.97 across the benchmarks).
 - **Group designs** from a single comparison to factorial (e.g. term/preterm × SGA/non-SGA) with covariates.
 - **Clean by construction.** ENCODE blacklist, gaps, high-N and low-mappability bins are removed before anything is counted.
+- **Comparable with cfdna-chromatin-xai (0.3.0).** Options switch off GC correction, change the detrend window, pool groups
+  instead of fitting a per-bin t, and use one specificity table across layers; with these settings the tool reproduces the
+  cfdna-chromatin-xai GBM progression / pseudoprogression figure (r = 0.98), while still reporting label-permutation p-values.
 
 | Panel | Layers | Use |
 |---|---|---|
@@ -35,6 +38,28 @@ bash tests/smoke_test.sh
 cfdna-tissue-enrich run --panel prenatal --samples samples.csv --out results/ \
     --factor birth:term:preterm --factor sga:nonSGA:SGA --covariates gestational_age_weeks
 ```
+
+### Reproducing a cfdna-chromatin-xai figure (0.3.0)
+
+```bash
+cfdna-tissue-enrich run --panel glioma --samples samples.csv --out results_xai/ --modes differential \
+    --group group --reference-level pseudo --case progression \
+    --gc-correct no --detrend-bins 101 --diff-stat pooled --specificity combined --loo
+```
+
+| option | default | effect |
+|---|---|---|
+| `--gc-correct yes\|no` | `yes` | per-sample GC LOWESS (all modes) |
+| `--detrend-bins N` | 41 (50 kb) / 205 (10 kb) | rolling-median detrend window, ~2 Mb by default |
+| `--diff-stat t\|pooled` | `t` | differential per-bin statistic: moderated t, or the difference of pooled groups (one two-level factor, no covariates) |
+| `--specificity layer\|combined` | `layer` | specificity within each layer, or across all panel layers (cfdna-chromatin-xai) |
+| `--loo` | off | pooled statistic: leave-one-out re-pool + re-score of the top bins |
+
+Defaults reproduce 0.2.0 exactly. `z_closed_form` (the cfdna-chromatin-xai `spec_z`) is reported for top bins but is
+descriptive: top bins are selected from the data, so judge significance by `p_perm`. In the GBM benchmark the pattern
+reproduced at z up to ±29 had `p_perm` ≥ 0.11 and largely disappeared with GC correction. Direction: in cfDNA, open chromatin
+loses coverage, so top bins with **more coverage in cases** point to cell types **more active in the reference group**; the
+`top_bins_activity` figure labels both.
 
 Documentation: `docs/` (published as a GitHub Pages site by `.github/workflows/docs.yml`; preview locally with
 `pip install mkdocs-material && mkdocs serve`).

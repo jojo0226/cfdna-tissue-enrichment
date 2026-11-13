@@ -6,7 +6,7 @@
   cfdna-tissue-enrich tracks --panel NAME          list a panel's tracks (and which are primary)
   cfdna-tissue-enrich plot   --out RUN [--top N]   (re)draw ranked bar plots of all tracks for a finished run
 """
-import argparse, json, os, sys, time
+import argparse, json, os, re, sys, time
 import numpy as np, pandas as pd
 from . import __version__
 from . import reference as RF, counts as CN, stats as ST, modes as MD, figures as FG
@@ -60,7 +60,7 @@ def cmd_panels(a):
 
 def cmd_tracks(a):
     P = RF.load_panel(a.panel); rdir = RF.ref_dir(a.build, a.reference); g = RF.load_grid(rdir, a.bin)
-    layers, meta = RF.load_layers(rdir, a.bin, P["layers"], g.key.to_numpy()); SP = RF.specificity(layers, P); prim = RF.primary_tracks(P)
+    layers, meta = RF.load_layers(rdir, a.bin, P["layers"], g.key.to_numpy()); SP = RF.specificity(layers, P, getattr(a, "specificity", "layer")); prim = RF.primary_tracks(P)
     for c in SP.columns: print(f"{'*' if c in prim else ' '} {c}")
     print(f"\n{SP.shape[1]} tracks; * = primary ({len(prim)})")
 
@@ -80,21 +80,28 @@ def cmd_run(a):
     F = ST.parse_factors(a.factor, meta); covs = [c for c in a.covariates.split(",") if c]
     badc = [c.split(":")[0] for c in covs if c.split(":")[0] not in meta]
     if badc: sys.exit(f"covariates not in samples file: {badc}")
+    pooled = a.diff_stat == "pooled" and "differential" in modes
+    if pooled and (len(F) != 1 or covs or a.interaction):
+        sys.exit("--diff-stat pooled needs exactly one two-level factor and no covariates / interaction (samples are pooled per group)")
     if not F and ("sample" in modes or "differential" in modes):
         sys.exit("no groups given: both modes need --factor (or --group); sample mode scores each sample against the reference group")
     meta = meta.set_index("sample_id", drop=False)
 
     P = RF.load_panel(a.panel); rdir = RF.ref_dir(a.build, a.reference); bs = RF.BIN[a.bin]
     g = RF.load_grid(rdir, a.bin); lut = RF.lookup_tables(g, bs)
-    layers, lmeta = RF.load_layers(rdir, a.bin, P["layers"], g.key.to_numpy()); SP = RF.specificity(layers, P)
+    layers, lmeta = RF.load_layers(rdir, a.bin, P["layers"], g.key.to_numpy()); SP = RF.specificity(layers, P, a.specificity)
     primary = [t for t in RF.primary_tracks(P, a.primary) if t in SP.columns]
     log(f"panel '{a.panel}' ({', '.join(P['layers'])}), {a.build} {a.bin}: {len(g):,} bins, {SP.shape[1]} tracks ({len(primary)} primary); modes: {', '.join(modes)}")
+    gcc = a.gc_correct == "yes"; win = a.detrend_bins or CN.DETREND[a.bin]
+    log(f"preprocessing: GC correction {'on' if gcc else 'OFF'}, detrend {win} bins; specificity '{a.specificity}'; differential statistic '{a.diff_stat}'")
 
-    samples = list(meta.sample_id); Xp = np.zeros((len(samples), len(g))); qc, hists = [], {}
+    samples = list(meta.sample_id); Xp = np.zeros((len(samples), len(g))); Lev = np.zeros_like(Xp) if pooled else None; qc, hists = [], {}
     for i, sid in enumerate(samples):
         log(f"sample {i + 1}/{len(samples)} {sid}")
         cts, hist, n_all, n_pass, has_q, _ = get_counts(sid, meta.loc[sid, "frag_path"], a, g, lut, bs)
-        Xp[i] = CN.preprocess(cts, g, a.bin); hists[sid] = hist; qc.append(CN.qc_row(sid, cts, hist, n_all, n_pass, has_q, a.min_fragments))
+        if pooled: Xp[i], Lev[i] = CN.preprocess(cts, g, a.bin, gcc, win, level=True)
+        else: Xp[i] = CN.preprocess(cts, g, a.bin, gcc, win)
+        hists[sid] = hist; qc.append(CN.qc_row(sid, cts, hist, n_all, n_pass, has_q, a.min_fragments))
     Q = pd.DataFrame(qc).set_index("sample_id"); Q.to_csv(os.path.join(a.out, "qc.csv")); FG.qc(os.path.join(a.out, "qc.png"), Q, hists, a.max_len)
 
     lab = refcell = Xd = terms = None
@@ -118,11 +125,20 @@ def cmd_run(a):
 
     if "differential" in modes:
         od = os.path.join(a.out, "differential"); os.makedirs(od, exist_ok=True)
-        sf, tp, bt, nb, df_ = MD.mode_differential(Xp, samples, SP, Xd, terms, primary, g, a.n_perm_bins, a.top_n, a.n_random, a.seed)
+        lo = None
+        if pooled:
+            sf, tp, bt, nb, lo = MD.mode_differential_pooled(Lev, samples, SP, Xd, terms[0], primary, g, a.n_perm_bins, a.top_n, a.n_random, a.seed, win, a.loo)
+            info["differential"] = dict(bins_used=nb, statistic="pooled", n_case=int((Xd[terms[0]] == 1).sum()), n_reference=int((Xd[terms[0]] == 0).sum()))
+            if lo is not None: lo.to_csv(os.path.join(od, "enrichment_top_bins_loo.csv"), index=False)
+        else:
+            sf, tp, bt, nb, df_ = MD.mode_differential(Xp, samples, SP, Xd, terms, primary, g, a.n_perm_bins, a.top_n, a.n_random, a.seed)
+            info["differential"] = dict(bins_used=nb, statistic="moderated t", residual_df=float(df_))
+            if df_ < 8: log(f"note: differential mode has {df_:.0f} residual df; bin-level t are unstable")
         sf.to_csv(os.path.join(od, "enrichment_all_bins.csv"), index=False); tp.to_csv(os.path.join(od, "enrichment_top_bins.csv"), index=False)
         bt.to_csv(os.path.join(od, "bin_effects.csv.gz"), index=False, float_format="%.5g"); FG.differential(os.path.join(od, "enrichment_all_bins.png"), sf, primary)
-        info["differential"] = dict(bins_used=nb, residual_df=float(df_))
-        if df_ < 8: log(f"note: differential mode has {df_:.0f} residual df; bin-level t are unstable")
+        for e_, t_ in tp.groupby("effect", sort=False):
+            case_, ref_ = FG.effect_parts(e_); fn = os.path.join(od, f"top_bins_activity_{re.sub(r'[^A-Za-z0-9]+', '_', e_).strip('_')}.png")
+            FG.top_bins_activity(fn, t_, None if lo is None else lo[lo.effect == e_], case_, ref_, a.bar_top or 20, primary)
         log("differential done")
 
     if F: FG.ranked_outputs(a.out, a.bar_top)
@@ -142,6 +158,7 @@ def main(argv=None):
         p.add_argument("--panel", default="pan", help="panel name (see 'panels') or a panel JSON path")
         p.add_argument("--build", default="hg38"); p.add_argument("--bin", default="50kb", choices=list(RF.BIN))
         p.add_argument("--reference", default=None, help="reference root (default: ./reference or $CFTE_REFERENCE)")
+        p.add_argument("--specificity", default="layer", choices=["layer", "combined"], help="track specificity within each layer (default) or across all panel layers (cfdna-chromatin-xai)")
         if name in ("run", "count"):
             p.add_argument("--samples", required=True, help="CSV with sample_id, frag_path (+ metadata columns)")
             p.add_argument("--cache", default=None, help="folder for per-sample bin counts; reused by later runs")
@@ -160,6 +177,10 @@ def main(argv=None):
             p.add_argument("--n-random", type=int, default=200); p.add_argument("--n-perm", type=int, default=2000); p.add_argument("--n-perm-bins", type=int, default=200)
             p.add_argument("--top-n", type=int, default=2000); p.add_argument("--seed", type=int, default=17)
             p.add_argument("--bar-top", type=int, default=None, help="ranked bar plots: tracks per panel (default: all)")
+            p.add_argument("--gc-correct", default="yes", choices=["yes", "no"], help="per-sample GC LOWESS before the detrend (default yes)")
+            p.add_argument("--detrend-bins", type=int, default=None, help="rolling-median detrend window in bins (default ~2 Mb: 41 at 50kb, 205 at 10kb)")
+            p.add_argument("--diff-stat", default="t", choices=["t", "pooled"], help="differential per-bin statistic: moderated t (default) or pooled-group difference (cfdna-chromatin-xai)")
+            p.add_argument("--loo", action="store_true", help="pooled differential: leave-one-out re-pool + re-score of the top bins")
     sub.add_parser("panels")
     pp = sub.add_parser("plot"); pp.add_argument("--out", required=True, help="finished run folder"); pp.add_argument("--top", type=int, default=None, help="tracks per panel (default: all)")
     a = ap.parse_args(argv)
