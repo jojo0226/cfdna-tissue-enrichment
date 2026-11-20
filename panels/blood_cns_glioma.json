@@ -1,0 +1,38 @@
+{
+ "name": "blood_cns_glioma",
+ "description": "Per-sample blood / CNS / glioma tracks of the C1D1 and Ahmed NU21C01 analyses: specificity across all 96 C + T tracks (z per bin), 18 tracks reported",
+ "layers": [
+  "C",
+  "T"
+ ],
+ "specificity": "combined-z",
+ "tracks": [
+  "C_Peyer's patch",
+  "C_brain",
+  "C_cerebellum",
+  "C_frontal cortex",
+  "C_germinal center",
+  "C_occipital lobe",
+  "C_spinal cord",
+  "C_spleen",
+  "C_thymus",
+  "C_CD14-positive monocyte",
+  "C_B cell",
+  "C_CD4-positive, alpha-beta T cell",
+  "C_CD8-positive, alpha-beta T cell",
+  "C_natural killer cell",
+  "C_common myeloid progenitor, CD34-positive",
+  "C_neutrophil",
+  "T_GBM",
+  "T_LGG"
+ ],
+ "primary": [
+  "T_GBM",
+  "T_LGG",
+  "C_brain",
+  "C_frontal cortex",
+  "C_spinal cord",
+  "C_neutrophil",
+  "C_CD14-positive monocyte"
+ ]
+}

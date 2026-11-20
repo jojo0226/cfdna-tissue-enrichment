@@ -33,6 +33,11 @@ Panels live in `panels/*.json`. A panel lists layers, derived tracks and pre-reg
 - As `tumor`, plus the exploratory cross-layer axis `glioma_vs_blood` (TCGA GBM/LGG minus ENCODE blood cells).
 - Primary: `Tgroup_glioma`, `T_GBM`, `T_LGG`, `C_brain`, `C_frontal cortex`, `C_spinal cord`, `C_neutrophil`, `C_CD14-positive monocyte`, `glioma_vs_blood`.
 
+### `blood_cns_glioma` (C + T)
+- The per-sample panel of the C1D1 and Ahmed NU21C01 analyses: `"specificity": "combined-z"` (z per bin across all 96 C + T
+  tracks), then only the 18 blood / immune, CNS and TCGA GBM / LGG tracks are kept (`"tracks"`).
+- Use with `--modes sample --sample-reference all`.
+
 ### `pan` (C + T + W)
 All groups from the other panels, no primary tracks. For exploration.
 
@@ -45,11 +50,16 @@ Copy a panel JSON and edit it. Fields:
  "name": "my_panel",
  "description": "one line",
  "layers": ["C", "T"],
+ "specificity": "layer",
+ "tracks": ["T_GBM", "T_LGG", "C_brain", "C_neutrophil"],
  "groups": {"Tgroup_glioma": {"layer": "T", "members": ["GBM", "LGG"]}},
  "axes": {"glioma_vs_blood": {"plus_layer": "T", "plus": ["GBM", "LGG"],
                               "minus_layer": "C", "minus": ["neutrophil", "B cell"]}},
  "primary": ["Tgroup_glioma", "T_GBM", "C_neutrophil"]
 }
 ```
+
+`specificity` (optional: `layer`, `combined` or `combined-z`; `--specificity` overrides it) and `tracks` (optional: keep only
+these tracks; specificity still uses every track of the layers) were added in 0.4.0; leave `tracks` out to keep all.
 
 Run with `--panel path/to/my_panel.json`. Fix the primary list **before** looking at outcome data.

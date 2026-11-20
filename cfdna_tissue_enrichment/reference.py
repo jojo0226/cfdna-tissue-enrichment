@@ -64,14 +64,20 @@ def load_layers(rdir, binsz, layer_ids, keys):
 def specificity(layers, panel, method="layer"):
     """method 'layer' (default): per layer, as described above. 'combined': the panel's layers in one table of raw
     openness, specificity = track openness - mean over all panel tracks (the cfdna-chromatin-xai definition; mixes
-    assays, so TCGA tracks are compared with ENCODE tissues and blood too)."""
+    assays, so TCGA tracks are compared with ENCODE tissues and blood too). 'combined-z': the layer definition applied
+    to all panel layers as one table (z per bin across every panel track; the C1D1 / Ahmed per-sample enrichment).
+    A panel 'tracks' list keeps only those tracks (after specificity, which still uses every track of its layers)."""
     cols = {}
-    if method == "combined":
+    if method in ("combined", "combined-z"):
         A = pd.concat([A.add_prefix(f"{L}_") for L, A in layers.items()], axis=1)
-        S = A.sub(A.mean(1), axis=0)
+        if method == "combined":
+            S = A.sub(A.mean(1), axis=0)
+        else:
+            Z = A.sub(A.mean(1), axis=0).div(A.std(1).replace(0, np.nan), axis=0); n = Z.shape[1]
+            S = Z - (Z.sum(1).values[:, None] - Z.values) / (n - 1)
         for c in S.columns: cols[c] = S[c].to_numpy()
     elif method != "layer":
-        sys.exit(f"unknown specificity method '{method}' (layer, combined)")
+        sys.exit(f"unknown specificity method '{method}' (layer, combined, combined-z)")
     for L, A in (layers.items() if method == "layer" else []):
         Z = A.sub(A.mean(1), axis=0).div(A.std(1).replace(0, np.nan), axis=0); n = Z.shape[1]
         S = Z - (Z.sum(1).values[:, None] - Z.values) / (n - 1)
@@ -87,8 +93,12 @@ def specificity(layers, panel, method="layer"):
             v = np.nanmean(np.column_stack([cols[m] for m in P]), 1) - np.nanmean(np.column_stack([cols[m] for m in M]), 1)
             cols[name] = v
             if ax.get("mirror"): cols[ax["mirror"]] = -v
-    keys = next(iter(layers.values())).index
-    return pd.DataFrame(cols, index=keys)
+    keys = next(iter(layers.values())).index; out = pd.DataFrame(cols, index=keys)
+    if panel.get("tracks"):
+        miss = [t for t in panel["tracks"] if t not in out]
+        if miss: sys.exit(f"panel tracks not found: {miss}")
+        out = out[panel["tracks"]]
+    return out
 
 
 def primary_tracks(panel, override=None):

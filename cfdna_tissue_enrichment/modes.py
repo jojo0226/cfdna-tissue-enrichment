@@ -1,11 +1,14 @@
-"""The two modes. Both take the normalised coverage matrix Xp (samples x grid bins) and the track specificity
-SP (grid bins x tracks) from reference.specificity().
+"""The three modes. All take the normalised coverage matrix Xp (samples x grid bins); sample and differential also take
+the track specificity SP (grid bins x tracks) from reference.specificity().
 
-  sample        per sample: bin z against a reference group, Spearman with each track's specificity over all bins
+  sample        per sample: bin z against a reference group (or all samples), Spearman with each track's specificity
+                over all bins
   differential  per bin: group effect (moderated t, default) or pooled-group difference (--diff-stat pooled); per
                 track: Spearman of the bin statistic with specificity over all bins, and specificity of the top-N bins
                 up / down; label-permutation nulls (top bins re-selected per permutation); closed-form random-bin z
-                (descriptive)"""
+                (descriptive)
+  markers       per sample: mean coverage over each marker set's top-N bins (10 kb marker atlas), with GC-decile
+                matched random sets of the same size as the null"""
 import numpy as np, pandas as pd
 
 
@@ -15,6 +18,7 @@ def closed_form_z(m, Sm, n):
     N = len(Sm); return (m - Sm.mean(0)) / (Sm.std(0) / np.sqrt(n) * np.sqrt((N - n) / (N - 1)))
 from scipy import stats as sst
 from .stats import ols_t, strata, permuted_design, bh
+from . import markers as MK
 
 
 def match_strata(g):
@@ -34,6 +38,9 @@ def matched_random(idx, st, n_random, rng):
 
 # ------------------------------------------------------------------ sample
 def mode_sample(Xp, samples, SP, ref_mask, loo_min=4):
+    """ref_mask: reference samples for the per-bin median / MAD; each reference sample is left out of its own reference
+    when there are >= loo_min (pass loo_min=None to keep it in, e.g. reference = all samples)."""
+    if loo_min is None: loo_min = len(samples) + 1
     ok = np.isfinite(SP.to_numpy()).all(1) & np.isfinite(Xp).all(0); X = Xp[:, ok]; Sm = SP.to_numpy()[ok]
     sr = np.apply_along_axis(sst.rankdata, 0, Sm); sr = (sr - sr.mean(0)) / sr.std(0)
     ri = np.where(ref_mask)[0]; Z = np.empty_like(X)
@@ -130,3 +137,17 @@ def mode_differential_pooled(Lev, samples, SP, X, term, primary, g, n_perm, top_
                 lo.append(pd.DataFrame({"effect": term, "direction": direction, "dropped": s_, "track": SP.columns, "mean_specificity": m, "z_closed_form": closed_form_z(m, Sm, n)}))
     bins_out = pd.DataFrame({"effect": term, "key": g.key.to_numpy()[ok], "d": d})
     return sf, pd.concat(top, ignore_index=True), bins_out, int(ok.sum()), (pd.concat(lo, ignore_index=True) if lo else None)
+
+
+# ------------------------------------------------------------------ markers
+def mode_markers(Xp, g, path, top, n_random, include=None, exclude=None, seed=17):
+    """score[sample, set] = mean of Xp over the set's top-N marker bins (rank <= top) that are on the grid; random null:
+    n_random sets per marker set drawn to match its GC deciles (rand[set] = samples x n_random scores)."""
+    mk = MK.load(path, pd.Index(g.key), include, exclude)
+    if mk.empty: raise SystemExit(f"no marker bins of {path} are on the grid (check the --bin size and key format)")
+    S = MK.scores(Xp, mk, top); rand = None
+    if n_random:
+        R = MK.random_sets(g.gc.to_numpy(float), mk, top, n_random, seed)
+        rand = {c: np.column_stack([np.nanmean(Xp[:, ix], 1) for ix in R[c]]) for c in S.columns}
+    n_bins = mk[mk["rank"] <= top].groupby("cell_type").size()
+    return S, rand, MK.jaccard(mk, top), n_bins

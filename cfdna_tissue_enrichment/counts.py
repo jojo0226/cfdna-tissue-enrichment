@@ -58,12 +58,21 @@ def detrend(y, g, w):
     return out
 
 
-def preprocess(counts, g, binsz, gc_correct=True, window=None, level=False):
+def read_coverage(path, keys):
+    """Per-sample coverage csv (key + one *_cpm column; e.g. fragbed6_to_coverage_mapq output) -> CPM on the grid bins."""
+    x = pd.read_csv(path); col = [c for c in x.columns if c.endswith("_cpm")]
+    if "key" not in x or not col: raise SystemExit(f"{path}: coverage csv needs 'key' and a '*_cpm' column")
+    return x.set_index("key")[col[0]].reindex(keys).to_numpy(float)
+
+
+def preprocess(counts, g, binsz, gc_correct=True, window=None, level=False, cpm=None):
     """log2(CPM + 1) -> LOWESS on GC (frac 0.10, 3 iterations, level kept; skipped when gc_correct=False) ->
     per-chromosome centred rolling-median detrend (window bins; default ~2 Mb). level=True also returns the
-    log2 values before the detrend (the pooled differential statistic pools those)."""
+    log2 values before the detrend (the pooled differential statistic pools those). cpm: precomputed CPM per grid bin
+    (coverage-file input; used as given, not re-normalised) instead of counts."""
     from statsmodels.nonparametric.smoothers_lowess import lowess
-    cpm = counts / max(counts.sum(), 1) * 1e6; y = np.log2(cpm + 1)
+    if cpm is None: cpm = counts / max(counts.sum(), 1) * 1e6
+    y = np.log2(cpm + 1)
     if gc_correct:
         gc = g.gc.to_numpy(float); ok = np.isfinite(gc) & np.isfinite(y)
         fit = np.full(len(y), np.nan); fit[ok] = lowess(endog=y[ok], exog=gc[ok], frac=0.10, it=3, return_sorted=False)

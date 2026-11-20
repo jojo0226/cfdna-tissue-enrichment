@@ -24,7 +24,8 @@ bash tests/smoke_test.sh              # every panel on the example data + a repr
 | column | required | meaning |
 |---|---|---|
 | `sample_id` | yes | unique name |
-| `frag_path` | yes | fragment file; absolute or relative to the sheet |
+| `frag_path` | one of these two | fragment file; absolute or relative to the sheet |
+| `coverage` | | per-sample coverage csv (`key` + one `*_cpm` column, e.g. from `fragbed6_to_coverage_mapq.py`); CPM used as given |
 | group columns | for group analyses | one column per two-level factor, e.g. `birth` = term / preterm, `sga` = nonSGA / SGA |
 | covariates | no | e.g. `gestational_age_weeks`, `age`, `sex`, `batch` |
 
@@ -47,6 +48,12 @@ cfdna-tissue-enrich run --panel glioma --samples samples.csv --out results/ \
 cfdna-tissue-enrich run --panel tumor --samples samples.csv --out results/ \
     --group diagnosis --reference-level control --case PRAD --primary T_PRAD,C_neutrophil
 
+# per-sample tissue enrichment and marker coverage, paired timepoints (the Ahmed NU21C01 analysis)
+cfdna-tissue-enrich run --panel blood_cns_glioma --modes sample --sample-reference all --samples s50.csv --out tissue_50kb/ \
+    --groups Pre,Surgery,On-treatment --contrasts Surgery:Pre,On-treatment:Surgery,On-treatment:Pre --patient-col patient --label-col cycle --connect
+cfdna-tissue-enrich run --modes markers --bin 10kb --markers immune_marker_bins_10kb_immune_GBM_LGG.csv.gz --samples s10.csv --out markers_10kb/ \
+    --groups Pre,Surgery,On-treatment --contrasts Surgery:Pre,On-treatment:Surgery,On-treatment:Pre --patient-col patient --label-col cycle --connect
+
 cfdna-tissue-enrich panels                     # list panels
 cfdna-tissue-enrich tracks --panel prenatal    # list a panel's tracks; * = primary
 ```
@@ -56,7 +63,12 @@ cfdna-tissue-enrich tracks --panel prenatal    # list a panel's tracks; * = prim
 | option | default | meaning |
 |---|---|---|
 | `--panel` | `pan` | panel name or a panel JSON path |
-| `--modes` | `sample,differential` | either or both; both need groups (`--factor` or `--group`) |
+| `--modes` | `sample,differential` | any of `sample`, `differential`, `markers`; differential needs groups (`--factor` or `--group`), sample too unless `--sample-reference all` |
+| `--sample-reference` | `group` | `all`: sample-mode z against every sample (C1D1 / Ahmed) (0.4.0) |
+| `--markers`, `--marker-top` | —, 1000 | markers mode: marker atlas and bins per set; use `--bin 10kb` (0.4.0) |
+| `--group-col`, `--groups`, `--contrasts` | `group`, all, adjacent | per-sample report: group column, groups kept (in order), `case:ref` contrasts (0.4.0) |
+| `--patient-col`, `--label-col`, `--connect` | `patient` | paired sign-flip tests when patients repeat (`none` = unpaired); plot labels; PCA arrows (0.4.0) |
+| `--pca-centre` | sample `no`, markers `both` | report PCA on raw and / or sample-centred scores (0.4.0) |
 | `--factor` | — | `COLUMN:REFERENCE:CASE`, repeatable |
 | `--group`, `--reference-level`, `--case` | — | shortcut for one factor |
 | `--interaction` | off | factor × factor terms |
@@ -69,5 +81,5 @@ cfdna-tissue-enrich tracks --panel prenatal    # list a panel's tracks; * = prim
 | `--gc-correct` | `yes` | `no` skips the per-sample GC LOWESS (0.3.0) |
 | `--detrend-bins` | 41 / 205 | rolling-median detrend window in bins (0.3.0) |
 | `--diff-stat` | `t` | `pooled` = difference of pooled groups, one two-level factor, no covariates (0.3.0) |
-| `--specificity` | `layer` | `combined` = one table across the panel's layers, as cfdna-chromatin-xai (0.3.0) |
+| `--specificity` | panel's, else `layer` | `combined` = one table across the panel's layers, as cfdna-chromatin-xai (0.3.0); `combined-z` = per-bin z across all panel tracks, as C1D1 / Ahmed (0.4.0) |
 | `--loo` | off | pooled statistic: leave-one-out re-pool + re-score of the top bins (0.3.0) |

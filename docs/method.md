@@ -28,14 +28,19 @@ Panels can add derived tracks:
     `T_GBM` specificity is "open in GBM more than in the other TCGA cancer types", not "more than in blood".
     Use a cross-layer axis or the `C_` blood tracks alongside it when the question is tumour vs blood.
 
-## 3. The two modes
+## 3. The three modes
 
 | mode | per-sample score | method |
 |---|---|---|
 | `sample` | yes | Each bin is turned into a z-score against the **reference group** (median, 1.4826 × MAD; reference samples left out of their own reference when ≥ 4). E = Spearman correlation of a sample's z over all bins with the track's specificity. Uses all bins, nothing selected. |
+| `markers` | yes | 10 kb. Mean preprocessed coverage over each marker set's top-N bins (`--marker-top`, default 1,000; marker atlas from `--markers`: `cell_type, key, rank`), with `--n-random` (200) random sets per marker set matched to its GC deciles as the null. The C1D1 / Ahmed NU21C01 immune and CNS marker analysis. |
 | `differential` | no | Each bin is fitted with the group model (moderated t). Per track: (a) **all bins**: Spearman correlation of bin t with specificity; (b) **top bins**: mean specificity of the 2,000 bins most up and most down. Both are tested against label permutations (bins refitted and top bins re-selected each time). A z against GC × mappability matched random bins is reported for description only. |
 
-Positive values mean the same in both modes: more coverage, in cases (or in that sample), at bins specific to the track.
+`sample` with `--sample-reference all` (z against every sample, no leave-one-out) and the `blood_cns_glioma` panel
+(`--specificity combined-z`: the per-bin z of section 2 taken across all 96 C + T tracks, 18 blood / CNS / glioma tracks
+reported) is the 50 kb per-sample tissue enrichment of the C1D1 and Ahmed NU21C01 analyses.
+
+Positive values mean the same in `sample` and `differential`: more coverage, in cases (or in that sample), at bins specific to the track.
 
 ### Options added in 0.3.0 (defaults reproduce 0.2.0)
 
@@ -59,17 +64,27 @@ the cfdna-chromatin-xai `spec_z`. Top bins are selected from the data, so it is 
 - **Effect tests** (sample mode): OLS of each score on the factors + covariates; p from OLS and from
   permutations of one factor's labels *within* levels of the other factors (covariates stay with their samples).
 - **Pairwise tests**: every other group vs the reference group (difference, AUC, Mann–Whitney p, permutation p).
+- **Per-sample report** (`sample` and `markers`, when the samples file has the group column, `--group-col`): for each
+  `--contrasts case:ref`, a **paired** test when `--patient-col` links ≥ 3 patients across both groups (d = case − ref per
+  patient, exact sign-flip p over all 2^n flips up to n = 16, `n_up`), else **unpaired** (AUC, exact relabelling p for small
+  groups, else 10,000 permutations); BH within contrast. Markers add the effect of the GC-matched random sets (95% band,
+  `random_p`). PCA of the scores (raw and / or sample-centred), loadings, heatmaps, strip plots, PCA of per-patient change.
 - **Multiple testing**: BH across all tracks (`q_perm`) and separately across the panel's primary tracks (`q_perm_primary`).
 
-## 5. Why there is no `sets` mode
+## 5. `markers` vs the removed `sets` mode
 
-Versions ≤ 0.1.2 had a third mode, `sets`: mean coverage over each track's top-1,000 specific bins minus random bins
+Versions ≤ 0.1.2 had a mode `sets`: mean coverage over each track's top-1,000 specific bins minus random bins
 matched on GC and mappability (the original cfdna-chromatin-xai marker method). It was removed in 0.2.0. Across 11
 benchmarks its track rankings agreed only moderately with the other modes (r 0.35–0.63, against 0.91–0.97 between
 `sample` and `differential`), tracks significant in two modes sometimes went in opposite directions with `sets` the
 odd one out, and it was the least sensitive mode in the PRAD mixtures (detection limit 20% at 10 M fragments, against
 2% for `sample`). Top specific bins differ from matched random bins in more than GC and mappability (gene density,
 replication timing), so part of a `sets` score is not cell-type signal.
+
+`markers` (0.4.0) brings back the marker-bin idea for curated 10 kb marker atlases (immune subsets, TCGA, CNS cell types),
+as used for C1D1 and Ahmed, where it gave the clearest within-patient changes. The same caveat applies: judge each set
+against its GC-matched random sets (`random_p`, the band in the effect plots), prefer within-patient (paired) contrasts,
+and freeze the marker list and scoring before looking at a new cohort.
 
 ## 6. Why permutation p-values for top bins
 

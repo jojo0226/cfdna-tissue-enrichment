@@ -15,8 +15,10 @@ cfDNA fragment files ──► clean hg38 bins ──► GC-corrected, detrended
                   reference group                         tissue enrichment of it
 ```
 
+A third mode, `markers` (10 kb), scores each sample's coverage at curated cell-type marker bins against GC-matched random sets.
+
 - **Same method for every project.** Only the *panel* changes: which atlas layers and which pre-registered tracks.
-- **Two readouts.** A per-sample score (`sample`) and a group-level enrichment (`differential`). Both use every bin, with no bin selection, and agree closely (track rankings r ≈ 0.91–0.97 across the benchmarks).
+- **Three readouts.** A per-sample score (`sample`) and a group-level enrichment (`differential`) use every bin, with no bin selection, and agree closely (track rankings r ≈ 0.91–0.97 across the benchmarks). `markers` (0.4.0) is the per-sample 10 kb marker-set coverage of the C1D1 / Ahmed analyses.
 - **Group designs** from a single comparison to factorial (e.g. term/preterm × SGA/non-SGA) with covariates.
 - **Clean by construction.** ENCODE blacklist, gaps, high-N and low-mappability bins are removed before anything is counted.
 - **Comparable with cfdna-chromatin-xai (0.3.0).** Options switch off GC correction, change the detrend window, pool groups
@@ -29,6 +31,7 @@ cfDNA fragment files ──► clean hg38 bins ──► GC-corrected, detrended
 | `tumor` | ENCODE tissues (C) + TCGA tumour ATAC (T) | any cancer; set `--primary` for your tumour type |
 | `glioma` | C + T, glioma / CNS tracks pre-registered | GBM / LGG projects |
 | `pan` | C + T + W | exploration, nothing pre-registered |
+| `blood_cns_glioma` | C + T, 18 blood / CNS / glioma tracks, `combined-z` specificity | per-sample enrichment as in the C1D1 / Ahmed GBM analyses |
 
 ## Quick start
 
@@ -60,6 +63,20 @@ descriptive: top bins are selected from the data, so judge significance by `p_pe
 reproduced at z up to ±29 had `p_perm` ≥ 0.11 and largely disappeared with GC correction. Direction: in cfDNA, open chromatin
 loses coverage, so top bins with **more coverage in cases** point to cell types **more active in the reference group**; the
 `top_bins_activity` figure labels both.
+
+### Per-sample tissue enrichment and marker coverage (0.4.0; the C1D1 / Ahmed NU21C01 analyses)
+
+```bash
+# 50 kb tissue enrichment: z against all samples, 18 blood / CNS / glioma tracks, paired timepoints
+cfdna-tissue-enrich run --panel blood_cns_glioma --modes sample --sample-reference all --samples s50.csv --out tissue_50kb/ \
+    --groups Pre,Surgery,On-treatment --contrasts Surgery:Pre,On-treatment:Surgery,On-treatment:Pre --patient-col patient --label-col cycle --connect
+# 10 kb marker sets (immune / TCGA / CNS) with GC-matched random sets
+cfdna-tissue-enrich run --modes markers --bin 10kb --markers immune_marker_bins_10kb_immune_GBM_LGG.csv.gz --samples s10.csv --out markers_10kb/ \
+    --groups Pre,Surgery,On-treatment --contrasts Surgery:Pre,On-treatment:Surgery,On-treatment:Pre --patient-col patient --label-col cycle --connect
+```
+
+Samples can point to existing per-sample coverage csvs (`coverage` column) instead of fragment files. GC correction is on by
+default (`--gc-correct no` to switch off). `tests/regression_c1d1_ahmed.py` checks both cohorts against the original outputs.
 
 Documentation: `docs/` (published as a GitHub Pages site by `.github/workflows/docs.yml`; preview locally with
 `pip install mkdocs-material && mkdocs serve`).
